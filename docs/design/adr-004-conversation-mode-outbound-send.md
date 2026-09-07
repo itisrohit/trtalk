@@ -56,7 +56,7 @@ POST /send
 ```
 
 The core resolves the gateway per channel from `.env` — **one variable per
-channel**, wizard-able (`uvx chasqui new` can ask for it):
+channel**, wizard-able (`uvx trtalk new` can ask for it):
 
 ```bash
 CHANNEL_WHATSAPP_SEND_URL=http://localhost:8000/send

@@ -1,14 +1,14 @@
-# Chasqui — Architecture
+# TrTalk — Architecture
 
-> **Status:** design draft. **Codename:** `Chasqui` — after the relay messengers of the Inca empire, who carried messages across the network. A fitting metaphor for a messaging-agent gateway.
+> **Status:** design draft. **Codename:** `TrTalk` — after the relay messengers of the Inca empire, who carried messages across the network. A fitting metaphor for a messaging-agent gateway.
 
-## 1. What Chasqui is
+## 1. What TrTalk is
 
-Chasqui is a **base development stack** for building custom AI agents on WhatsApp. You generate a project from it (one project per company), and you get a working conversational agent out of the box — single conversation thread per contact, long-term memory, an FAQ knowledge base with RAG, an admin panel with editable prompts, and a **tool/module system** where you build the differentiating logic for that specific company.
+TrTalk is a **base development stack** for building custom AI agents on WhatsApp. You generate a project from it (one project per company), and you get a working conversational agent out of the box — single conversation thread per contact, long-term memory, an FAQ knowledge base with RAG, an admin panel with editable prompts, and a **tool/module system** where you build the differentiating logic for that specific company.
 
 **The philosophy is omakase** — in the Rails sense ([*Rails is omakase*](https://dhh.dk/2012/rails-is-omakase.html), [*The Rails Doctrine*](https://rubyonrails.org/doctrine)): a curated, opinionated menu chosen by someone with skin in the game, instead of a buffet of abstractions. You can substitute dishes (the LLM and embeddings are `.env` swaps), but the menu has an owner: Postgres + pgvector is the stack's identity (ADR-002), conventions beat configuration, and the energy goes into your agent's differentiating logic — not into re-deciding plumbing. Common things (prompts, FAQs, enabling tools) are **configurable from the admin panel**; genuinely new logic is **code** you add through the tool system.
 
-It ships with a project generator (**`uvx chasqui new`**, the [`cli`](https://github.com/chasqui-stack/cli) repo) that scaffolds a personalized, configured project — LLM, embeddings/dims, database location, WhatsApp credentials — ready to run locally and deploy. A `chasqui generate module` subcommand scaffolds new tool modules, `rails generate`-style.
+It ships with a project generator (**`uvx trtalk new`**, the [`cli`](https://github.com/itisrohit/cli) repo) that scaffolds a personalized, configured project — LLM, embeddings/dims, database location, WhatsApp credentials — ready to run locally and deploy. A `trtalk generate module` subcommand scaffolds new tool modules, `rails generate`-style.
 
 ## 2. Design principles
 
@@ -128,7 +128,7 @@ transcoding. The core never formats for a channel
 
 The **canonical dialect** is this Markdown subset — what the agent may emit
 and every gateway (including third-party channels built with the
-`chasqui-create-channel` skill) MUST render:
+`trtalk-create-channel` skill) MUST render:
 
 | Construct | Canonical form |
 |-----------|----------------|
@@ -256,7 +256,7 @@ delivered while the tab was closed; any channel can. Full rationale:
 
 ## 8. Tool Registry — the differentiating piece
 
-Tools are what make each agent unique. Chasqui builds on LangChain/LangGraph's native tool model rather than inventing its own.
+Tools are what make each agent unique. TrTalk builds on LangChain/LangGraph's native tool model rather than inventing its own.
 
 ### 8.1 How a tool is defined (LangChain native)
 
@@ -277,7 +277,7 @@ def store_lookup(city: str, runtime: ToolRuntime) -> str:
     return "Av. Larco 123, Miraflores — open 9am-9pm"
 ```
 
-Key LangChain mechanics Chasqui relies on:
+Key LangChain mechanics TrTalk relies on:
 - **`@tool` / `StructuredTool.from_function`** to declare tools; `args_schema` (Pydantic) for validated, typed inputs.
 - **`ToolRuntime`** (injected, not part of the schema) for access to graph `state`, immutable `context` (per-project config), persistent `store` (`BaseStore` long-term memory), and `tool_call_id`. Reserved param names: `runtime`, `config`.
 - **`bind_tools([...])`** to expose the active tool set to the model.
@@ -285,7 +285,7 @@ Key LangChain mechanics Chasqui relies on:
 - A tool may return a **`Command`** (`langgraph.types`) to update graph state alongside a `ToolMessage`.
 - **Error handling / dynamic tool filtering** via agent middleware (`wrap_tool_call`, `wrap_model_call`) — e.g. enable/disable tools per project at runtime.
 
-### 8.2 The Chasqui module contract
+### 8.2 The TrTalk module contract
 
 A **module** wraps one or more tools plus the things they need (tables, admin endpoints). The core discovers registered modules at startup and feeds their tools to the orchestrator. Adding behavior = adding a module; the core stays untouched.
 
@@ -307,16 +307,16 @@ The "Commercial Locations" example is really an archetype: *"customer-defined co
 
 ## 9. Repository strategy
 
-Everything lives under the GitHub organization **`chasqui-stack`**. Because the org namespace already says "chasqui", repos drop the prefix and stay clean (`chasqui-stack/core` rather than `chasqui-stack/chasqui-core`).
+Everything lives under the GitHub organization **`itisrohit`**. Because the org namespace already says "trtalk", repos drop the prefix and stay clean (`itisrohit/core` rather than `itisrohit/trtalk-core`).
 
 A parent repo holds the orchestration; each service is a **git submodule** pointing at its own repository, for independent deployment.
 
 ```
-chasqui-stack/chasqui          # parent repo (orchestration, docs, generator)
-├── core/      → chasqui-stack/core       (submodule: FastAPI backend)
-├── admin/     → chasqui-stack/admin      (submodule: React/Vite admin)
-├── whatsapp/  → chasqui-stack/whatsapp   (submodule: PyWa gateway)
-├── telegram/  → chasqui-stack/telegram   (submodule: python-telegram-bot gateway)
+itisrohit/trtalk          # parent repo (orchestration, docs, generator)
+├── core/      → itisrohit/core       (submodule: FastAPI backend)
+├── admin/     → itisrohit/admin      (submodule: React/Vite admin)
+├── whatsapp/  → itisrohit/whatsapp   (submodule: PyWa gateway)
+├── telegram/  → itisrohit/telegram   (submodule: python-telegram-bot gateway)
 ├── docs/                      # architecture, design, ADRs, roadmap
 ├── generate-project.sh        # project generator (rsync + variable substitution)
 ├── docker-compose.yml         # one-command spin-up for collaborators
@@ -325,13 +325,13 @@ chasqui-stack/chasqui          # parent repo (orchestration, docs, generator)
 
 | Repo | Role |
 |------|------|
-| `chasqui-stack/chasqui` | Parent: docs, generator, compose, submodules |
-| `chasqui-stack/core` | FastAPI + LangGraph backend |
-| `chasqui-stack/admin` | React/Vite admin panel |
-| `chasqui-stack/whatsapp` | PyWa gateway (WhatsApp channel) |
-| `chasqui-stack/telegram` | python-telegram-bot gateway (Telegram channel) |
+| `itisrohit/trtalk` | Parent: docs, generator, compose, submodules |
+| `itisrohit/core` | FastAPI + LangGraph backend |
+| `itisrohit/admin` | React/Vite admin panel |
+| `itisrohit/whatsapp` | PyWa gateway (WhatsApp channel) |
+| `itisrohit/telegram` | python-telegram-bot gateway (Telegram channel) |
 
-Channel adapters are their own repos under the same org, each consuming the canonical message contract. `chasqui-stack/telegram` is the second one (live); `chasqui-stack/web` and others follow the same shape.
+Channel adapters are their own repos under the same org, each consuming the canonical message contract. `itisrohit/telegram` is the second one (live); `itisrohit/web` and others follow the same shape.
 
 ## 10. Tech stack
 
@@ -380,7 +380,7 @@ cd admin && npm install && npm run dev
 
 ## 12. Roadmap (post v1)
 
-- **Web channel (embeddable widget)** — anonymous visitors, live outbound over **SSE**, a Preact widget served by a Node gateway (`chasqui-stack/web`). **MVP in progress** (ADR-011, epic #23) — deliberately *not* SSR and *not* logged-in; chunked/token streaming is a gateway-local follow-up.
+- **Web channel (embeddable widget)** — anonymous visitors, live outbound over **SSE**, a Preact widget served by a Node gateway (`itisrohit/web`). **MVP in progress** (ADR-011, epic #23) — deliberately *not* SSR and *not* logged-in; chunked/token streaming is a gateway-local follow-up.
 - Semi-generic **"customer-defined collection + retriever"** module.
 - Additional channel adapters (Instagram, …). *(Telegram shipped in v0.2.0, ADR-006.)*
 - Broker-backed workers / queues (`arq` / Celery) only if the Postgres-backed worker outgrows the DB — Postgres is the queue today (ADR-002, ADR-008's deferred-dispatch worker).

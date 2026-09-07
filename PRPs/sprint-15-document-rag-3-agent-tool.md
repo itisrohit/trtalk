@@ -187,7 +187,7 @@ cd core && make test                    # green, incl. extended test_knowledge.p
 - [ ] faq_search docstring boundary added (and nothing else touched in faq)
 - [ ] 10-question eval done and reported in the PR description (routing table)
 - [ ] make test green
-- [ ] PR from your fork → `chasqui-stack/core`, branch `feat/knowledge-tool`,
+- [ ] PR from your fork → `itisrohit/core`, branch `feat/knowledge-tool`,
       title `feat: search_documents tool + FAQ boundary (Sprint 15.3)`,
       body `Closes #<core-issue-number>` + the eval results table
 

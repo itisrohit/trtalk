@@ -2,7 +2,7 @@
 
 > **Status:** Accepted — 2026-06-13
 > **Context:** Sprint 9 adds Telegram as the second channel
-> (`chasqui-stack/telegram`, sibling of `whatsapp/`). Two non-obvious choices
+> (`itisrohit/telegram`, sibling of `whatsapp/`). Two non-obvious choices
 > shape the whole gateway and aren't dictated by the canonical contract: (1)
 > which Telegram library, and (2) how it integrates with FastAPI. PRP:
 > [`PRPs/sprint-09-telegram-channel.md`](../../PRPs/sprint-09-telegram-channel.md).

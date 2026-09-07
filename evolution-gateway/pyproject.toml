@@ -1,7 +1,7 @@
 [project]
 name = "agproto-evolution-gateway"
 version = "0.1.0"
-description = "Development-only Evolution API adapter for the Chasqui core"
+description = "Development-only Evolution API adapter for the TrTalk core"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.128.0",

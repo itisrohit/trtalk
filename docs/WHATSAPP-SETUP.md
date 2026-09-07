@@ -1,6 +1,6 @@
 # Getting WhatsApp Business API credentials
 
-Everything `chasqui new` asks for in its WhatsApp step comes from a (free)
+Everything `trtalk new` asks for in its WhatsApp step comes from a (free)
 Meta developer app. ~10 minutes, no company verification needed to start:
 Meta gives you a **test number** that can message up to 5 phones — perfect
 for development. This guide ends with the exact `.env` mapping.
@@ -26,7 +26,7 @@ The **API Setup** page shows almost everything:
 | `WA_WABA_ID` | API Setup → "WhatsApp Business Account ID". |
 | `WA_TOKEN` | API Setup → "Temporary access token" (⚠️ expires in 24h — see §4 for a permanent one). |
 | `WA_APP_ID` / `WA_APP_SECRET` | App dashboard → **App settings → Basic** ("App ID" and "App secret" → Show). |
-| `WA_VERIFY_TOKEN` | **You invent this one** — `chasqui new` generates it and prints it; you never get it from Meta, you *give* it to Meta (§5). |
+| `WA_VERIFY_TOKEN` | **You invent this one** — `trtalk new` generates it and prints it; you never get it from Meta, you *give* it to Meta (§5). |
 
 ## 3. Allow your phone to receive messages
 
@@ -35,7 +35,7 @@ Test numbers only message **registered recipients** (max 5): API Setup →
 number and confirm the code Meta sends you.
 
 Send yourself the "hello world" template from that page once — it confirms
-the number works before Chasqui enters the picture.
+the number works before TrTalk enters the picture.
 
 ## 4. A token that doesn't expire (recommended)
 
@@ -74,7 +74,7 @@ webhook field. (Leave `WA_CALLBACK_URL` unset in prod.)
 
 When you outgrow the test number: add a real phone number in the WhatsApp
 product, verify your business in Business Manager, and switch the app from
-Development to Live mode. None of your Chasqui config changes — same vars,
+Development to Live mode. None of your TrTalk config changes — same vars,
 new values.
 
 ---

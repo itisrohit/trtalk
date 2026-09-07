@@ -1,13 +1,13 @@
-# Chasqui brand assets
+# TrTalk brand assets
 
-The mark: a **chasqui** — the Inca relay messenger — running with a letter,
-hair streaming into a chat bubble. Flat, geometric, Andean-textile cuts.
+The mark: a compact conversation bubble with a connection motif, designed for
+fast, friendly multilingual communication.
 
 | File | Use |
 |---|---|
-| `chasqui-icon.svg` / `chasqui-icon-512.png` | Square mark on charcoal — org/app avatars, favicons, OG thumbnails |
-| `chasqui-logo.svg` / `chasqui-logo.png` | Horizontal lockup (icon + wordmark) — README headers, site, docs |
-| `chasqui-og.png` | 1280×640 — GitHub social preview (repo Settings → Social preview) |
+| `trtalk-icon.svg` / `trtalk-icon-512.png` | Square mark on charcoal — org/app avatars, favicons, OG thumbnails |
+| `trtalk-logo.svg` / `trtalk-logo.png` | Horizontal lockup (icon + wordmark) — README headers, site, docs |
+| `trtalk-og.png` | 1280×640 — GitHub social preview (repo Settings → Social preview) |
 
 ## Palette (canonical — snap any export to these)
 

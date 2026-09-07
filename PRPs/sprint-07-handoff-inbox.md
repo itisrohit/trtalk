@@ -42,7 +42,7 @@ Last product sprint of the first release. Design locked in
 
 ## What
 
-### Part A — Core (`chasqui-stack/core`)
+### Part A — Core (`itisrohit/core`)
 
 | Piece | Behavior |
 |---|---|
@@ -58,7 +58,7 @@ Last product sprint of the first release. Design locked in
 | Leads admin API | Module-owned: `GET /admin/modules/handoff/leads` (`{items,total}` + limit/offset + `?contact_id=`). The panel's `/leads` page consumes it. |
 | Settings | `channel_whatsapp_send_url`, `notify_webhook_url`, `smtp_host/port/user/password/from`, `notify_email_to`. |
 
-### Part B — WhatsApp gateway (`chasqui-stack/whatsapp`)
+### Part B — WhatsApp gateway (`itisrohit/whatsapp`)
 
 - `POST /send` (`X-Internal-API-Key` auth, same secret as core's `/ingest`):
   canonical payload → PyWa `send_message(to=wa_id, text)`.
@@ -67,7 +67,7 @@ Last product sprint of the first release. Design locked in
   re-engagement) or `SEND_FAILED`.
 - Tests with PyWa stubbed (existing `tests/` pattern).
 
-### Part C — Admin (`chasqui-stack/admin`)
+### Part C — Admin (`itisrohit/admin`)
 
 - Conversations list: 🚨 human-mode badge, "needs human" filter tab
   (`?mode=human`), attention-first order comes from the API.

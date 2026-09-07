@@ -1,14 +1,14 @@
 # ADR-002: PostgreSQL-only — the stack is omakase
 
 > **Status:** Accepted — 2026-06-10
-> **Context:** While planning the `chasqui new` generator (Sprint 6), the
+> **Context:** While planning the `trtalk new` generator (Sprint 6), the
 > question came up: should the stack support MariaDB/MySQL/SQLite as
 > alternative databases, the way Rails does?
 
 ## Decision
 
 **PostgreSQL + pgvector is the identity of the stack, not a default.**
-Chasqui does not and will not abstract the database engine.
+TrTalk does not and will not abstract the database engine.
 
 ## Rationale
 
@@ -30,7 +30,7 @@ Chasqui does not and will not abstract the database engine.
 
 ## What the generator asks instead
 
-`chasqui new` never asks *which engine* — it asks **where your Postgres is**
+`trtalk new` never asks *which engine* — it asks **where your Postgres is**
 (local / docker-compose / managed URL). That covers the real use case behind
 the question without mortgaging the project.
 

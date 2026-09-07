@@ -5,15 +5,15 @@
 > **Status:** Completed — accepted by Willy 2026-06-13. Live e2e: Telegram
 > inbound text + photo + voice note → agent reply (multimodal), MarkdownV2
 > rendering, human-mode silence; WhatsApp markdown after the i18n fix. Shipped
-> as **v0.2.0** across the stack + `chasqui` 0.2.0 on PyPI (verified
-> `uvx chasqui@0.2.0 new --channels whatsapp,telegram`). Decisions: ADR-006
+> as **v0.2.0** across the stack + `trtalk` 0.2.0 on PyPI (verified
+> `uvx trtalk@0.2.0 new --channels whatsapp,telegram`). Decisions: ADR-006
 > (Telegram lib + webhook), ADR-007 (canonical Markdown rendering).
 
 ---
 
 ## Goal
 
-Add **Telegram** as the second channel — a new `chasqui-stack/telegram`
+Add **Telegram** as the second channel — a new `itisrohit/telegram`
 gateway (submodule, sibling of `whatsapp/`) that speaks the exact same
 canonical contract (`docs/ARCHITECTURE.md` §5) the core already exposes.
 
@@ -32,7 +32,7 @@ seam is proven.
   (`docs/ARCHITECTURE.md` §2.2, §5) is that channels are thin, swappable
   adapters. Until a second channel exists, that's untested theory. Telegram
   is the cheapest possible falsification test.
-- **Lowers the barrier to try Chasqui.** WhatsApp onboarding needs a Meta
+- **Lowers the barrier to try TrTalk.** WhatsApp onboarding needs a Meta
   developer app, a business, phone-number verification, and a 24h-window
   dance (`docs/WHATSAPP-SETUP.md`). A Telegram bot token comes from
   **@BotFather in two minutes**, no business account, no review. For someone
@@ -68,7 +68,7 @@ closing the sprint.
 
 ### Success Criteria
 
-- [ ] New repo `chasqui-stack/telegram` exists, added here as a submodule at
+- [ ] New repo `itisrohit/telegram` exists, added here as a submodule at
       `telegram/`, with `AGENTS.md` + `CLAUDE.md` symlink, `README.md`,
       `.env.example` (no secrets), `Makefile` (`make dev`), `pyproject.toml`,
       `Dockerfile`, mirroring the `whatsapp/` layout.
@@ -163,11 +163,11 @@ closing the sprint.
 ### Current vs. desired structure
 
 ```
-chasqui-stack/chasqui          # parent (this repo)
+itisrohit/trtalk          # parent (this repo)
 ├── core/      → submodule
 ├── admin/     → submodule
 ├── whatsapp/  → submodule   (the template)
-└── telegram/  → submodule   ★ NEW — chasqui-stack/telegram
+└── telegram/  → submodule   ★ NEW — itisrohit/telegram
 ```
 
 ```bash
@@ -280,11 +280,11 @@ turn out non-obvious during the build.
 
 ```yaml
 Task 0: Create the repo + submodule
-  - CREATE GitHub repo chasqui-stack/telegram (public, Apache-2.0).
+  - CREATE GitHub repo itisrohit/telegram (public, Apache-2.0).
   - Bootstrap by copying whatsapp/ layout (≈40% reusable verbatim:
     core_client.py, the main.py skeleton, config.py shape, Makefile,
     Dockerfile, .gitignore, AGENTS.md structure).
-  - Add as submodule here: telegram/ → chasqui-stack/telegram. Commit the
+  - Add as submodule here: telegram/ → itisrohit/telegram. Commit the
     pointer in the parent (submodules pin commits — parent CLAUDE.md).
 
 Task 1: config.py
@@ -331,7 +331,7 @@ Task 6: main.py — FastAPI app
     background task; return {"ok": true} immediately (ACK FAST).
   - POST /send: INTERNAL_API_KEY header guard (copy whatsapp), call
     send_canonical, map SendError → HTTPException with {code,message}.
-  - GET /health → {"status":"ok","service":"chasqui-telegram"}.
+  - GET /health → {"status":"ok","service":"trtalk-telegram"}.
   - Sentry init when DSN set.
   - MIRROR: whatsapp/app/main.py.
 
@@ -340,8 +340,8 @@ Task 7: core wiring (the ONLY core change)
   - MODIFY core/.env.example: commented CHANNEL_TELEGRAM_SEND_URL example.
   - VERIFY: grep core/app for "telegram" → only the config field, no branch.
 
-Task 8: CLI wizard (chasqui-stack/cli — separate repo, ADR-005)
-  - Add optional Telegram step to `chasqui new`: ask for bot token (skippable
+Task 8: CLI wizard (itisrohit/cli — separate repo, ADR-005)
+  - Add optional Telegram step to `trtalk new`: ask for bot token (skippable
     like WhatsApp creds), write telegram/.env + set CHANNEL_TELEGRAM_SEND_URL
     in core/.env when provided. Pin the new telegram submodule tag in the
     stack the CLI fetches. (Coordinate via the cli repo's AGENTS.md release
@@ -356,7 +356,7 @@ Task 9: docs
     Quickstart (telegram make dev on :8001).
   - MODIFY docs/ARCHITECTURE.md §3/§9 if wording implies WhatsApp-only.
   - CREATE docs/design/adr-006-telegram-channel.md (the decision above).
-  - MODIFY landing (chasqui-website): flip Telegram from roadmap-dashed to live
+  - MODIFY landing (trtalk-website): flip Telegram from roadmap-dashed to live
     in the architecture diagram + roadmap (EN + ES i18n.ts). [separate repo]
 
 Task 10: tests
@@ -405,7 +405,7 @@ smaller than the core sprints (6/7).
 - Inline keyboards / rich Telegram-native UI beyond what maps to the existing
   canonical `button` type. (The contract carries buttons; fancy Telegram
   layouts are a later polish.)
-- Telegram groups / channels — Chasqui is 1:1 contact ↔ conversation (§6).
+- Telegram groups / channels — TrTalk is 1:1 contact ↔ conversation (§6).
   Bot-in-a-group is a separate design question.
 - Payments, web-app buttons, location/contact sharing — future, behind the
   contract.

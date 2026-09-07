@@ -2,7 +2,7 @@
 
 > **Status:** Accepted — 2026-06-17
 > **Sprint:** 13+ (Web channel epic — MVP)
-> **Related:** ARCHITECTURE §5 (canonical contract — `channel`, `external_id`, media as `data:` URI), §5.1 (`POST /send`, ADR-004), §5.2 (deferred dispatch / coalescing, ADR-008), §10 (identity — BSUID-first, "channel-scoped id otherwise"), §12 (roadmap — web channel), ADR-003 (media storage / re-hydration), ADR-010 (STT fallback for inbound audio), `chasqui-create-channel` skill (the gateway pattern this channel **departs from** — Decision 1), admin `AGENTS.md` (the static-SPA charter — why the web channel is a separate service, Decision 1)
+> **Related:** ARCHITECTURE §5 (canonical contract — `channel`, `external_id`, media as `data:` URI), §5.1 (`POST /send`, ADR-004), §5.2 (deferred dispatch / coalescing, ADR-008), §10 (identity — BSUID-first, "channel-scoped id otherwise"), §12 (roadmap — web channel), ADR-003 (media storage / re-hydration), ADR-010 (STT fallback for inbound audio), `trtalk-create-channel` skill (the gateway pattern this channel **departs from** — Decision 1), admin `AGENTS.md` (the static-SPA charter — why the web channel is a separate service, Decision 1)
 
 ## Context
 
@@ -41,7 +41,7 @@ and Alternatives.
 
 ## Decision
 
-### 1. A new service `chasqui-stack/web` — a **Node monolith** (Express + Vite + Preact), not a FastAPI gateway and not folded into the admin
+### 1. A new service `itisrohit/web` — a **Node monolith** (Express + Vite + Preact), not a FastAPI gateway and not folded into the admin
 
 The web channel is **another channel adapter** — it speaks only the canonical
 contract, resolves its reply URL from `CHANNEL_WEB_SEND_URL` like any channel
@@ -179,8 +179,8 @@ It renders a floating **bubble**; clicking opens a **chatbox** (visitor right,
 agent left, media inline). The bundle is **self-contained and small** — Preact
 via `preact/compat`, **Shadow-DOM isolated** so no styles leak either way (§1) —
 built by Vite and **served by the Express server itself**, configured via
-`data-*` attributes. First dogfood target: a *"Habla con Chasqui"* bubble on
-`chasqui-website`.
+`data-*` attributes. First dogfood target: a *"Habla con TrTalk"* bubble on
+`trtalk-website`.
 
 ## Consequences
 
@@ -207,7 +207,7 @@ built by Vite and **served by the Express server itself**, configured via
   new seam in the contract to maintain.
 - **A new gateway archetype** — the first **non-Python** gateway. It forgoes the
   ~40% verbatim reuse WhatsApp/Telegram share (`core_client.py`, media handling,
-  `/send`), and the `chasqui-create-channel` skill + docs must now say *"gateways
+  `/send`), and the `trtalk-create-channel` skill + docs must now say *"gateways
   are usually FastAPI; the web channel is a Node monolith because it ships its own
   client."* A deliberate fork in the doctrine, not an accident.
 - The Node service holds **SSE transport state** (the `visitor → stream` map) —

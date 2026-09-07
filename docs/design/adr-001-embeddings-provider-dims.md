@@ -25,7 +25,7 @@ FAQ entries). A "re-embed all" admin action ships with Sprint 4.
 ## Decision 2 — `EMBEDDING_DIM` is **provision-time `.env` config** (default 768)
 
 > *Amended 2026-06-10: originally a hardcoded constant; now env-driven so a
-> generated project can choose its dimension in the `chasqui new` wizard.*
+> generated project can choose its dimension in the `trtalk new` wizard.*
 
 The vector column width is created from `EMBEDDING_DIM` on the **first
 `alembic upgrade`** (migration 002 reads settings). It is NOT runtime

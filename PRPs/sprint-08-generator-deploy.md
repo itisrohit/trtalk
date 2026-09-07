@@ -1,10 +1,10 @@
-# PRP: Sprint 8 — `chasqui new` CLI, Deploy & OSS Release
+# PRP: Sprint 8 — `trtalk new` CLI, Deploy & OSS Release
 
 > **Version:** 1.1
 > **Created:** 2026-06-11
 > **Status:** Completed — accepted by Willy 2026-06-11 (full e2e from the
-> published package: `uvx chasqui new` → wizard → agent answers on
-> WhatsApp, FAQ-RAG and handoff inbox working; `chasqui` 0.1.x on PyPI)
+> published package: `uvx trtalk new` → wizard → agent answers on
+> WhatsApp, FAQ-RAG and handoff inbox working; `trtalk` 0.1.x on PyPI)
 
 ---
 
@@ -13,10 +13,10 @@
 The last sprint of the first release. The product is done (Sprints 0–7);
 this sprint makes it **usable by people who aren't us**:
 
-1. **`uvx chasqui new <name>`** — a Rails-`new`-style wizard that produces a
+1. **`uvx trtalk new <name>`** — a Rails-`new`-style wizard that produces a
    branded, configured, locally-running project from one command. New repo
-   `chasqui-stack/cli`, PyPI package `chasqui` (verified free 2026-06-11).
-2. **`chasqui generate module <name>`** — à la `rails generate`: scaffolds
+   `itisrohit/cli`, PyPI package `trtalk` (verified free 2026-06-11).
+2. **`trtalk generate module <name>`** — à la `rails generate`: scaffolds
    the Sprint-3 tool-module anatomy inside a project.
 3. **Deploy story documented** — Kamal 2 guide for the three services
    (core + pgvector accessory, gateway, admin static), per-service
@@ -30,7 +30,7 @@ single-repo output, best-effort resumable provisioning.
 
 ## Why
 
-- Today "try Chasqui" = clone 4 repos, hand-write 3 `.env`s, share one
+- Today "try TrTalk" = clone 4 repos, hand-write 3 `.env`s, share one
   secret between two of them, know what a BSUID is. After this sprint it's
   one command — the omakase promise completed.
 - The enabling principle was built deliberately across Sprints 4–7:
@@ -42,11 +42,11 @@ single-repo output, best-effort resumable provisioning.
 
 ## What
 
-### Part A — CLI (new repo `chasqui-stack/cli`, PyPI: `chasqui`)
+### Part A — CLI (new repo `itisrohit/cli`, PyPI: `trtalk`)
 
 | Piece | Behavior |
 |---|---|
-| Skeleton | Python ≥3.11 · `typer` + `questionary` + `httpx` · entry point `chasqui` · pytest · Apache-2.0 · GH Actions (test + trusted publishing to PyPI). The CLI never imports service code (runs in uvx's ephemeral env). |
+| Skeleton | Python ≥3.11 · `typer` + `questionary` + `httpx` · entry point `trtalk` · pytest · Apache-2.0 · GH Actions (test + trusted publishing to PyPI). The CLI never imports service code (runs in uvx's ephemeral env). |
 | Preflight | Check `uv`, `node` (22+ for admin), `psql`/Postgres reachability — report versions, warn-don't-block (provisioning degrades per step). |
 | Fetch | Codeload tarballs of core/whatsapp/admin at the stack tag pinned in the CLI release (constant). `--ref <branch/tag>` escape hatch for dev. Output: ONE plain repo `<name>/{core,whatsapp,admin}` + root README + docker-compose — **no submodules, no git history**. |
 | Rename | Explicit manifest in Python (never blind sed): `deploy.yml` service/image names, `APP_NAME`, default `POSTGRES_DB`, admin `package.json` name, README titles → project slug. |
@@ -78,11 +78,11 @@ single-repo output, best-effort resumable provisioning.
 ### Part C — OSS polish
 
 - `LICENSE` Apache-2.0 in every repo (core ✓; parent, whatsapp, admin, cli).
-- **Parent README rewrite**: what Chasqui is, the `uvx chasqui new`
+- **Parent README rewrite**: what TrTalk is, the `uvx trtalk new`
   quickstart, architecture overview + diagram link, screenshots (panel,
   inbox), local dev, deploy link, badges.
 - `CONTRIBUTING.md` (parent) + module-authoring guide (`docs/MODULES.md`):
-  how to write a Tool Module — the Sprint-3 contract, `chasqui generate
+  how to write a Tool Module — the Sprint-3 contract, `trtalk generate
   module` as the starting point, faq/ as the reference implementation.
 - Final pass over service READMEs + `.env.example`s.
 
@@ -94,24 +94,24 @@ single-repo output, best-effort resumable provisioning.
    call, probably not worth it).
 2. Final docs pass; submodule bumps in the parent.
 3. Tag `v0.1.0`: core, whatsapp, admin, parent.
-4. CLI pins the `v0.1.0` stack tag → publish `chasqui` 0.1.0 to PyPI
+4. CLI pins the `v0.1.0` stack tag → publish `trtalk` 0.1.0 to PyPI
    (claim the name early — see gotcha 1; trusted publisher setup on PyPI
    is Willy's account) → tag cli `v0.1.0`.
 5. ~~Repos public~~ — already public; codeload works as soon as the tag
    exists.
-6. e2e with Willy: `uvx chasqui new demo` on a clean setup.
+6. e2e with Willy: `uvx trtalk new demo` on a clean setup.
 
 ### Success criteria
 
-- [x] On a machine with `uv` + Node 22 + Postgres: `uvx chasqui new demo` →
+- [x] On a machine with `uv` + Node 22 + Postgres: `uvx trtalk new demo` →
       answer the wizard → start the three services → message the WhatsApp
       number → the agent replies; panel, handoff inbox and leads work.
       **Without hand-editing a single file.** (Willy's e2e, 2026-06-11:
       wizard clean, WhatsApp reply, FAQ-RAG and handoff confirmed.)
-- [x] `chasqui new demo --defaults --skip-provision` is non-interactive
-      (CI-able) and `chasqui --version` works via `uvx` (verified from the
+- [x] `trtalk new demo --defaults --skip-provision` is non-interactive
+      (CI-able) and `trtalk --version` works via `uvx` (verified from the
       published PyPI package, 2026-06-11).
-- [x] `chasqui generate module hello` inside the project → `make test`
+- [x] `trtalk generate module hello` inside the project → `make test`
       green with the module auto-discovered (verified 2026-06-11; surfaced
       a real bug: test deps were an optional extra `uv sync` never
       installed → moved to `[dependency-groups]` in core+gateway, v0.1.2).
@@ -120,7 +120,7 @@ single-repo output, best-effort resumable provisioning.
       de-templated deploy.ymls, secrets examples and prod Docker builds are
       all in place).
 - [x] No `psicolab` / `saas-template` / real-IP strings in anything public.
-- [x] `v0.1.0` tagged on all five repos; `chasqui` 0.1.0 on PyPI (trusted
+- [x] `v0.1.0` tagged on all five repos; `trtalk` 0.1.0 on PyPI (trusted
       publishing, 2026-06-11).
 - [x] CLI pytest green (19); existing core (124) / gateway (23) / admin
       suites stay green.
@@ -144,7 +144,7 @@ single-repo output, best-effort resumable provisioning.
 
 ### Key decisions (on top of ADR-005)
 
-1. **PyPI name `chasqui`** — verified free 2026-06-11 (`chasqui-cli` free
+1. **PyPI name `trtalk`** — verified free 2026-06-11 (`trtalk-cli` free
    as fallback). Claim it with the first publish; don't sit on it.
 2. **Generated project is ONE plain repo** — submodules are a maintainer
    workflow; users get one history, one clone, one PR flow.
@@ -153,7 +153,7 @@ single-repo output, best-effort resumable provisioning.
 4. **The wizard never asks anything that isn't a `.env` var.** A question
    needing new service behavior means the service grows the variable first.
 5. **Renames via explicit Python manifest** — macOS/Linux `sed -i`
-   divergence killed the shell approach, and "chasqui" appears in
+   divergence killed the shell approach, and "trtalk" appears in
    identifiers that must not change.
 6. **Provisioning never aborts the scaffold** — a failed step prints its
    manual command and continues where safe (`rails new` without a DB still
@@ -194,14 +194,14 @@ single-repo output, best-effort resumable provisioning.
 ## Tasks
 
 - [x] ADR-005 + this PRP (parent commit).
-- [x] New repo `chasqui-stack/cli`: skeleton (pyproject, typer app,
+- [x] New repo `itisrohit/cli`: skeleton (pyproject, typer app,
       pytest, CI, LICENSE, README, AGENTS.md + CLAUDE.md symlink).
 - [x] Fetch + layout + rename manifest (`--ref`, local-path dev override).
 - [x] Wizard + `.env` rendering + auto-secrets (golden-file tests).
 - [x] Provision pipeline + epilogue + `--defaults` / `--skip-provision`
       (full-provision e2e against the local stack: all six steps green,
       admin seeded, 2026-06-11).
-- [x] `chasqui generate module <name>` (+ `--with-models`, `--with-admin`)
+- [x] `trtalk generate module <name>` (+ `--with-models`, `--with-admin`)
       + golden-file tests.
 - [x] Deploy: de-template gateway/admin `deploy.yml`s,
       `.kamal/secrets.example` ×3, Dockerfile prod-build check (all three
@@ -209,12 +209,12 @@ single-repo output, best-effort resumable provisioning.
 - [x] OSS polish: LICENSEs (already in all repos), parent README rewrite
       (uvx quickstart + badges), CONTRIBUTING (already existed),
       `docs/MODULES.md`, service README pass (internal sprint refs dropped).
-- [x] Release train: sanitize → tags `v0.1.0` ×5 → `chasqui` 0.1.0
+- [x] Release train: sanitize → tags `v0.1.0` ×5 → `trtalk` 0.1.0
       **published on PyPI** via trusted publishing (Willy set up the
       publisher; workflow green) → GitHub Releases on cli + parent →
-      verified end-to-end: `uvx chasqui new demo` scaffolds from PyPI +
+      verified end-to-end: `uvx trtalk new demo` scaffolds from PyPI +
       the real tags (2026-06-11).
-- [x] Manual e2e with Willy: `uvx chasqui new demo` from scratch →
+- [x] Manual e2e with Willy: `uvx trtalk new demo` from scratch →
       WhatsApp message answered → panel/FAQ/handoff OK (**accepted
       2026-06-11**).
 
@@ -226,7 +226,7 @@ single-repo output, best-effort resumable provisioning.
   step-by-step) linked from the wizard, epilogue and READMEs; admin swapped
   to `@vitejs/plugin-react` (Rolldown-Vite warning).
 - **v0.1.2** — test deps moved from an optional extra to
-  `[dependency-groups]` in core+gateway: plain `uv sync` (what `chasqui
+  `[dependency-groups]` in core+gateway: plain `uv sync` (what `trtalk
   new` runs) now installs them, so `make test` works in generated projects.
 - **CLI 0.1.3** — initial commit moved AFTER provisioning: npm/uv lockfile
   updates land in it, generated projects start with a clean tree.

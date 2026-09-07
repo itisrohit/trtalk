@@ -23,7 +23,7 @@ That's it — no token expiry, no permissions to configure.
 | Wizard asks / `.env` var | Where it is |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | The token @BotFather gave you in step 1. Keep it secret. |
-| `TELEGRAM_WEBHOOK_SECRET` | **You invent this one** — any random string. The gateway passes it to Telegram on `setWebhook`, and Telegram echoes it back in the `X-Telegram-Bot-Api-Secret-Token` header on every call so the gateway can verify authenticity. `chasqui new` generates it for you. |
+| `TELEGRAM_WEBHOOK_SECRET` | **You invent this one** — any random string. The gateway passes it to Telegram on `setWebhook`, and Telegram echoes it back in the `X-Telegram-Bot-Api-Secret-Token` header on every call so the gateway can verify authenticity. `trtalk new` generates it for you. |
 
 ## 3. The webhook (how messages reach your gateway)
 
@@ -54,7 +54,7 @@ Open `t.me/<your_bot_username>`, hit **Start**, and send a message. The agent
 replies in the same chat — same core, same memory, FAQ-RAG and tools as every
 other channel.
 
-> Group chats are out of scope (Chasqui is one thread per contact). Use the
+> Group chats are out of scope (TrTalk is one thread per contact). Use the
 > bot in a 1:1 direct chat.
 
 ---

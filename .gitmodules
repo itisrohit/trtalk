@@ -1,15 +1,15 @@
 [submodule "core"]
 	path = core
-	url = https://github.com/chasqui-stack/core.git
+	url = https://github.com/itisrohit/core.git
 [submodule "admin"]
 	path = admin
-	url = https://github.com/chasqui-stack/admin.git
+	url = https://github.com/itisrohit/admin.git
 [submodule "whatsapp"]
 	path = whatsapp
-	url = https://github.com/chasqui-stack/whatsapp.git
+	url = https://github.com/itisrohit/whatsapp.git
 [submodule "telegram"]
 	path = telegram
-	url = https://github.com/chasqui-stack/telegram.git
+	url = https://github.com/itisrohit/telegram.git
 [submodule "web"]
 	path = web
-	url = https://github.com/chasqui-stack/web.git
+	url = https://github.com/itisrohit/web.git

@@ -22,7 +22,7 @@ multi-file drop, the agent tool (15.3).
 ## Why
 
 - 15.1's endpoints are operator-facing; without UI the feature doesn't exist for the
-  Chasqui persona (a non-technical operator uploading a price list PDF).
+  TrTalk persona (a non-technical operator uploading a price list PDF).
 - The upload-with-states pattern (optimistic row + polling) is new to the panel —
   worth doing well once; future modules will copy it.
 
@@ -181,7 +181,7 @@ npm run dev   # login → Knowledge Base page
 - [ ] Delete with ConfirmDialog; search preview scored
 - [ ] en/es complete (parity test green); no hardcoded strings; tokens only
 - [ ] lint + build + test green
-- [ ] PR from your fork → `chasqui-stack/admin`, branch `feat/knowledge-page`,
+- [ ] PR from your fork → `itisrohit/admin`, branch `feat/knowledge-page`,
       title `feat: knowledge base page — upload, states, delete (Sprint 15.2)`,
       body `Closes #<admin-issue-number>`
 

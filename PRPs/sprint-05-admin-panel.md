@@ -21,7 +21,7 @@ Operators configure the agent **without redeploys**: edit the system prompt, man
 
 ## What
 
-### Part A — Core endpoints (`chasqui-stack/core`)
+### Part A — Core endpoints (`itisrohit/core`)
 
 | Endpoint | Verb | Purpose |
 |---|---|---|
@@ -33,7 +33,7 @@ Operators configure the agent **without redeploys**: edit the system prompt, man
 | `/admin/contacts/{id}/memories` | GET | The contact's long-term memories (content + timestamps, **never the embedding**). |
 | `/admin/modules/faq/search` | GET | NEW in the faq module: `?q=&top_k=` retrieval **preview** (entry + similarity score) so operators can test grounding before the agent does. |
 
-### Part B — Admin SPA (`chasqui-stack/admin`)
+### Part B — Admin SPA (`itisrohit/admin`)
 
 1. **i18n foundation FIRST** — react-i18next + `src/locales/{en,es}.json`; retrofit the existing bootstrap (Login, Dashboard, Sidebar, Header) to `t()`; header language switcher; `VITE_DEFAULT_LOCALE` (+ `.env.example`). HARD RULE from this commit on: no hardcoded UI strings.
 2. **Prompt editor** (`/prompt`) — monospace textarea over GET/PUT `/admin/config`, dirty-state guard, save toast. Effect next turn, no redeploy.

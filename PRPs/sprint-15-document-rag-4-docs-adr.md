@@ -20,7 +20,7 @@ in the cli repo's AGENTS.md), website/landing updates.
 
 ## Why
 
-- Chasqui is docs-as-code, no wiki: any non-obvious architectural decision gets an
+- TrTalk is docs-as-code, no wiki: any non-obvious architectural decision gets an
   ADR **in the same repo, versioned** (see `docs/design/adr-*.md`). Document-RAG made
   several (text-in-Postgres, BackgroundTasks over a worker, chunking constants,
   two-retriever separation) that will look arbitrary in six months without the record.
@@ -50,13 +50,13 @@ in the cli repo's AGENTS.md), website/landing updates.
 ## All Needed Context
 
 ```yaml
-- skill: chasqui-write-adr                     # the ADR habit + anti-patterns (installed skill)
+- skill: trtalk-write-adr                     # the ADR habit + anti-patterns (installed skill)
 - file: docs/design/adr-003-media-storage.md   # a good medium-size ADR to mirror
 - file: docs/design/adr-008-deferred-dispatch-coalescing.md  # worker-related sibling — Related: link it
 - file: docs/design/adr-001-embeddings-provider-dims.md      # Related: dims strategy the module obeys
 - file: PRPs/sprint-15-document-rag-1-core-module.md  # decisions 1–7 → ADR Decision section
 - file: PRPs/sprint-15-document-rag-3-agent-tool.md   # decisions 1–4 → ADR (two-retriever separation)
-- file: chasqui/AGENTS.md                      # docs-as-code conventions, end-of-sprint rule
+- file: trtalk/AGENTS.md                      # docs-as-code conventions, end-of-sprint rule
 ```
 
 ### ADR-012 content map (write it from these, in your own words)
@@ -95,7 +95,7 @@ in the cli repo's AGENTS.md), website/landing updates.
 - Skills repo re-pins docs URLs at release time as part of the ceremony (lockstep,
   ADR-009) — not a sprint task.
 VERIFY by grepping the cli repo for module-specific wiring (there should be none)
-and running `uvx chasqui new` against a local --source checkout if in doubt.
+and running `uvx trtalk new` against a local --source checkout if in doubt.
 ```
 
 ---
@@ -114,7 +114,7 @@ Task 3 - Service docs:
   - MODIFY core/README.md + core/AGENTS.md (feature + module inventory)
   - MODIFY admin/README.md + admin/AGENTS.md (Knowledge Base page)
   NOTE: core/admin changes go as small PRs on those repos (or ride the 15.1/15.2
-  PRs if still open); parent changes are one PR on chasqui-stack/chasqui.
+  PRs if still open); parent changes are one PR on itisrohit/trtalk.
 Task 4 - Release notes draft + CLI rationale:
   - COMMENT on the epic: release-notes block + the no-CLI-change paragraph
 Task 5 - Close the loop:
@@ -125,7 +125,7 @@ Task 5 - Close the loop:
 
 ```bash
 # Docs don't compile — review IS the validation:
-# - ADR passes the chasqui-write-adr anti-pattern check (has Alternatives AND
+# - ADR passes the trtalk-write-adr anti-pattern check (has Alternatives AND
 #   negative consequences; ships with/right after the code, not weeks later)
 # - grep the repos: every doc that lists modules/pages now includes knowledge
 rg -l "faq" docs/ core/README.md core/AGENTS.md   # each hit: does it also need knowledge?
@@ -136,7 +136,7 @@ rg -l "faq" docs/ core/README.md core/AGENTS.md   # each hit: does it also need 
 - [ ] ADR-012 merged (parent repo), linked from the epic
 - [ ] ARCHITECTURE §8 + MODULES.md + core & admin READMEs/AGENTS updated
 - [ ] Release-notes draft + no-CLI-change rationale posted on the epic
-- [ ] PRs reference the epic (`Refs chasqui-stack/chasqui#N`)
+- [ ] PRs reference the epic (`Refs itisrohit/trtalk#N`)
 
 ## Anti-Patterns to Avoid
 

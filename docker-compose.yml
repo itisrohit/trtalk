@@ -8,7 +8,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg17
     environment:
-      POSTGRES_DB: chasqui
+      POSTGRES_DB: trtalk
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -17,20 +17,20 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./core/config/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d chasqui"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trtalk"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   # Media storage (ADR-003) — local S3-compatible bucket, zero setup.
   # RustFS (Apache-2.0; MinIO was archived/relicensed in 2026 — see ADR-003).
-  # Console at http://localhost:9001 (chasqui / chasqui-secret).
+  # Console at http://localhost:9001 (trtalk / trtalk-secret).
   # Dev/test only: production points STORAGE_* at a managed bucket (S3/R2/B2).
   storage:
     image: rustfs/rustfs:latest
     environment:
-      RUSTFS_ACCESS_KEY: chasqui
-      RUSTFS_SECRET_KEY: chasqui-secret
+      RUSTFS_ACCESS_KEY: trtalk
+      RUSTFS_SECRET_KEY: trtalk-secret
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -44,13 +44,13 @@ services:
     depends_on:
       - storage
     environment:
-      AWS_ACCESS_KEY_ID: chasqui
-      AWS_SECRET_ACCESS_KEY: chasqui-secret
+      AWS_ACCESS_KEY_ID: trtalk
+      AWS_SECRET_ACCESS_KEY: trtalk-secret
       AWS_REGION: us-east-1
     entrypoint: >
       /bin/sh -c "
-      until aws --endpoint-url http://storage:9000 s3api head-bucket --bucket chasqui-media 2>/dev/null ||
-            aws --endpoint-url http://storage:9000 s3 mb s3://chasqui-media; do sleep 2; done;
+      until aws --endpoint-url http://storage:9000 s3api head-bucket --bucket trtalk-media 2>/dev/null ||
+            aws --endpoint-url http://storage:9000 s3 mb s3://trtalk-media; do sleep 2; done;
       echo bucket ready"
 
   core:
@@ -65,7 +65,7 @@ services:
       POSTGRES_PORT: "5432"
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: chasqui
+      POSTGRES_DB: trtalk
       JWT_SECRET_KEY: dev-secret-change-me
       INTERNAL_API_KEY: devkey
       CORS_ORIGINS: "http://localhost:3000"
@@ -84,9 +84,9 @@ services:
       # presigned URLs must be browser-reachable → public endpoint override.
       STORAGE_ENDPOINT_URL: "http://storage:9000"
       STORAGE_PUBLIC_ENDPOINT_URL: "http://localhost:9000"
-      STORAGE_BUCKET: chasqui-media
-      STORAGE_ACCESS_KEY: chasqui
-      STORAGE_SECRET_KEY: chasqui-secret
+      STORAGE_BUCKET: trtalk-media
+      STORAGE_ACCESS_KEY: trtalk
+      STORAGE_SECRET_KEY: trtalk-secret
       # Outbound seam (ADR-004): where operator replies go. Only resolvable
       # when the matching gateway profile is up; sends fail with a clear error
       # otherwise.

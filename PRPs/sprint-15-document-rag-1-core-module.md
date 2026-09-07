@@ -220,7 +220,7 @@ cd core && uv sync && make migrate && make test        # all green
 
 # Manual (make dev in another terminal; get a token first):
 TOKEN=$(curl -s -X POST localhost:8090/admin/auth/login \
-  -d 'username=admin@chasqui.local&password=changeme123' \
+  -d 'username=admin@trtalk.local&password=changeme123' \
   -H 'Content-Type: application/x-www-form-urlencoded' | jq -r .access_token)
 curl -s -X POST localhost:8090/admin/modules/knowledge/documents \
   -H "Authorization: Bearer $TOKEN" -F "file=@some.pdf"          # → 202 pending
@@ -238,7 +238,7 @@ curl -s "localhost:8090/admin/modules/knowledge/search?q=refund+policy" \
 - [ ] One batched embed call per document; outage → error, never a 500
 - [ ] Delete cascades chunks; search preview scored like FAQ's
 - [ ] `make test` green; zero edits outside the module + migration + tests + deps
-- [ ] PR from your fork → `chasqui-stack/core`, branch `feat/knowledge-module`,
+- [ ] PR from your fork → `itisrohit/core`, branch `feat/knowledge-module`,
       title `feat: knowledge module — document upload, chunking, embedding (Sprint 15.1)`,
       body `Closes #<core-issue-number>`
 

@@ -109,7 +109,7 @@ responsive. Tunable per deployment via `INBOUND_DEBOUNCE_SECONDS`.
   the body when debounce > 0. (All current gateways already ack-fast and can
   receive `/send`.)
 - The worker holds a conversation row lock + a connection for the turn duration
-  (seconds). Fine at Chasqui's scale; a future refactor (claim-then-process)
+  (seconds). Fine at TrTalk's scale; a future refactor (claim-then-process)
   would lift it if needed.
 - Multimodal in deferred mode re-hydrates media from the bucket (ADR-003): media
   + coalescing **requires storage**. Without storage, media in a deferred burst

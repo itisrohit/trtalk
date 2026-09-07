@@ -1,4 +1,4 @@
-# ADR-005 — The project generator is a thin CLI (`uvx chasqui new`)
+# ADR-005 — The project generator is a thin CLI (`uvx trtalk new`)
 
 > **Status:** Proposed — 2026-06-11
 > **Sprint:** 8 (CLI, deploy & OSS release)
@@ -24,11 +24,11 @@ reply, admin-UI locale. The services are the template; no engine needed.
 
 ## Decision
 
-### 1. A Python CLI in its own repo, published to PyPI as `chasqui`
+### 1. A Python CLI in its own repo, published to PyPI as `trtalk`
 
-New repo `chasqui-stack/cli`, package name `chasqui` (verified free on PyPI,
-2026-06-11; `chasqui-cli` also free as fallback). Runnable with zero install
-via `uvx chasqui new <name>` — `uv` is already a stack prerequisite, so the
+New repo `itisrohit/cli`, package name `trtalk` (verified free on PyPI,
+2026-06-11; `trtalk-cli` also free as fallback). Runnable with zero install
+via `uvx trtalk new <name>` — `uv` is already a stack prerequisite, so the
 runner comes for free. Stack: `typer` (commands) + `questionary` (wizard) +
 `httpx` (fetch). The CLI never imports service code — it runs in uvx's
 ephemeral environment, before any service dependency exists.
@@ -43,7 +43,7 @@ provision.** No template engine, no conditional scaffolding, no engines.
 
 ### 3. Degit-style fetch at a pinned stack tag
 
-`chasqui new` downloads GitHub tarballs (codeload) of the three service repos
+`trtalk new` downloads GitHub tarballs (codeload) of the three service repos
 at a **stack tag pinned per CLI release** (CLI `v0.1.0` ↔ services
 `v0.1.0`) — no git history, no submodules, reproducible output. An escape
 hatch (`--ref`) exists for development and testing against unreleased
@@ -60,7 +60,7 @@ project wants one history, one clone, one PR flow.
 
 A fixed list of (file, replacement) pairs — service/image names in
 `deploy.yml`, `APP_NAME`, default `POSTGRES_DB`, `package.json` name, README
-titles. Never a blind `sed` over the tree (portability, and "chasqui"
+titles. Never a blind `sed` over the tree (portability, and "trtalk"
 appears in code identifiers that must not change).
 
 ### 6. Provisioning is best-effort and resumable
@@ -75,14 +75,14 @@ baked into the schema at that moment (ADR-001).
 
 ## Consequences
 
-- One command (`uvx chasqui new`) is the public face of the stack — the
+- One command (`uvx trtalk new`) is the public face of the stack — the
   parent README quickstart, the release announcement, the docs all point at
   it. The CLI repo becomes release-critical: services tag first, CLI pins
   the tag, then publishes.
 - Service `.env.example` files are now a **public contract** consumed by the
   wizard — adding a provisioning-relevant variable means updating the CLI's
   prompt map in the same release.
-- `chasqui generate module <name>` rides the same repo and philosophy: it
+- `trtalk generate module <name>` rides the same repo and philosophy: it
   scaffolds the Sprint-3 module anatomy (the contract is the template), and
   the admin form still comes free via `config_schema()`.
 - macOS/Linux only for v0.1; Windows is untested and documented as such.
@@ -96,7 +96,7 @@ baked into the schema at that moment (ADR-001).
   template; the wizard only writes `.env`s.
 - **Submodules in the generated project** — exports our maintainer workflow
   onto users; rejected (decision 4).
-- **`npx create-chasqui`** — the stack is Python-first and `uv` is already
+- **`npx create-trtalk`** — the stack is Python-first and `uv` is already
   required; a Node entry point adds a second toolchain for zero gain.
 - **Cloning with full git history** — slower, bigger, and the user's project
   history should start at *their* first commit.

@@ -1,24 +1,24 @@
-# PRP: Sprint 11 — Chasqui extension skills (`chasqui-stack/skills`)
+# PRP: Sprint 11 — TrTalk extension skills (`itisrohit/skills`)
 
-> **Epic:** chasqui#18 · **Decision:** ADR-009 (`docs/design/adr-009-extension-skills.md`)
+> **Epic:** trtalk#18 · **Decision:** ADR-009 (`docs/design/adr-009-extension-skills.md`)
 > **Scope of this PRP:** stand up the new repo + the **first trio** of skills
-> (`chasqui-primer`, `chasqui-cli`, `chasqui-create-channel`) + the bidirectional
+> (`trtalk-primer`, `trtalk-cli`, `trtalk-create-channel`) + the bidirectional
 > CLI hook. Skills 4–7 (module/tool/adr/deploy) are follow-ups, not this sprint.
 
 ## Goal
 
-Ship a new org repo **`chasqui-stack/skills`** (local sibling `chasqui-skills/`,
-alongside `chasqui-cli/` and `chasqui-website/`) packaging
+Ship a new org repo **`itisrohit/skills`** (local sibling `trtalk-skills/`,
+alongside `trtalk-cli/` and `trtalk-website/`) packaging
 [Agent Skills](https://agentskills.io) that teach *any* skills-compatible coding
-agent (Claude Code, Cursor, Codex, Gemini CLI, …) how to work with Chasqui. End
-state: `npx skills add chasqui-stack/skills --skill '*'` installs three working
-skills, each a **thin pointer** to Chasqui's canonical docs by `STACK_TAG`-pinned
-URL, and `uvx chasqui new` tells the dev to install them.
+agent (Claude Code, Cursor, Codex, Gemini CLI, …) how to work with TrTalk. End
+state: `npx skills add itisrohit/skills --skill '*'` installs three working
+skills, each a **thin pointer** to TrTalk's canonical docs by `STACK_TAG`-pinned
+URL, and `uvx trtalk new` tells the dev to install them.
 
 ## Why
 
 - **Adoption play.** Conventions (the canonical contract, the `/send` seam, the
-  ADR habit) only pay off if followed by *other* devs building on Chasqui for
+  ADR habit) only pay off if followed by *other* devs building on TrTalk for
   their clients. Skills transmit them to the dev's **agent**, not just their eyes.
 - **One standard, every agent.** Agent Skills is an Anthropic-origin open format
   adopted by ~40 clients — one authoring effort reaches all of them.
@@ -32,33 +32,33 @@ A standalone repo whose layout mirrors
 (cloned for reference at `~/projects/open-source/langchain-skills`):
 
 ```
-chasqui-skills/                         # remote: chasqui-stack/skills
+trtalk-skills/                         # remote: itisrohit/skills
 ├── .claude-plugin/
 │   ├── marketplace.json                # one marketplace, one plugin
 │   └── plugin.json                     # "skills": "./config/skills/"
 ├── config/
 │   └── skills/
-│       ├── chasqui-primer/SKILL.md     # router — INVOKE FIRST
-│       ├── chasqui-cli/SKILL.md        # CLI reference
-│       └── chasqui-create-channel/SKILL.md
+│       ├── trtalk-primer/SKILL.md     # router — INVOKE FIRST
+│       ├── trtalk-cli/SKILL.md        # CLI reference
+│       └── trtalk-create-channel/SKILL.md
 ├── README.md                           # install (npx skills + Claude plugin)
 └── LICENSE                             # Apache-2.0 (match the stack)
 ```
 
-Plus, in `chasqui-cli`: a post-scaffold next-step line suggesting
-`npx skills add chasqui-stack/skills --skill '*'`.
+Plus, in `trtalk-cli`: a post-scaffold next-step line suggesting
+`npx skills add itisrohit/skills --skill '*'`.
 
 ### Success Criteria
 
-- [ ] `chasqui-stack/skills` repo exists, public, Apache-2.0, with the layout above.
-- [ ] `npx skills add chasqui-stack/skills --skill '*' --yes` installs all three
+- [ ] `itisrohit/skills` repo exists, public, Apache-2.0, with the layout above.
+- [ ] `npx skills add itisrohit/skills --skill '*' --yes` installs all three
       skills into a throwaway project (and `--global` works).
-- [ ] `/plugin marketplace add chasqui-stack/skills` + `/plugin install` works in
+- [ ] `/plugin marketplace add itisrohit/skills` + `/plugin install` works in
       Claude Code (manifests valid).
 - [ ] Each `SKILL.md` has valid frontmatter (`name`, `description`) and a
       `STACK_TAG`-pinned raw-URL pointer that **resolves** (HTTP 200).
-- [ ] `chasqui-primer` routes to the other two by name (the router pattern).
-- [ ] `chasqui new` prints the `npx skills add …` hint after a successful scaffold.
+- [ ] `trtalk-primer` routes to the other two by name (the router pattern).
+- [ ] `trtalk new` prints the `npx skills add …` hint after a successful scaffold.
 - [ ] Release ceremony (cli/AGENTS.md) documents bumping skills in lockstep.
 - [ ] No canonical contract text is **copied** into a skill — only pointed to.
 
@@ -96,11 +96,11 @@ Plus, in `chasqui-cli`: a post-scaffold next-step line suggesting
 - dir: telegram/  (app/main.py, app/handlers, app/services, app/core)
   why: The reference gateway structure a new channel mirrors. Point, don't inline.
 
-- file: ../chasqui-cli/src/chasqui/stack.py
+- file: ../trtalk-cli/src/trtalk/stack.py
   why: STACK_TAG lives here (currently "v0.2.4"). The skills' pinned URLs use this
-       exact tag. cli.py already has `chasqui new` + `chasqui generate module`.
+       exact tag. cli.py already has `trtalk new` + `trtalk generate module`.
 
-- file: ../chasqui-cli/src/chasqui/cli.py  (around line 116, "Next steps:")
+- file: ../trtalk-cli/src/trtalk/cli.py  (around line 116, "Next steps:")
   why: Where to add the post-scaffold `npx skills add` hint (the `new` command).
 ```
 
@@ -110,7 +110,7 @@ A `SKILL.md` body NEVER pastes the contract. It says, e.g.:
 
 ```markdown
 The canonical message contract is the single source of truth. Fetch it on demand:
-→ https://raw.githubusercontent.com/chasqui-stack/chasqui/v0.2.4/docs/ARCHITECTURE.md  (§5)
+→ https://raw.githubusercontent.com/itisrohit/trtalk/v0.2.4/docs/ARCHITECTURE.md  (§5)
 Do not reproduce its fields here; read it when you need them.
 ```
 
@@ -145,7 +145,7 @@ one source of truth and the skill carries almost no driftable surface.
 #    load next for the task at hand. Model on ecosystem-primer/SKILL.md.
 
 # 7. Repo is a SIBLING, not a submodule of the parent (ADR-009 §1). Do NOT add it
-#    to .gitmodules. Create it as its own repo; clone locally next to chasqui-cli.
+#    to .gitmodules. Create it as its own repo; clone locally next to trtalk-cli.
 
 # 8. License + authorship match the stack: Apache-2.0, author "William Wong Garay
 #    <willywg@gmail.com>" (public authorship per memory). Commit co-author trailer
@@ -158,33 +158,33 @@ one source of truth and the skill carries almost no driftable surface.
 
 ```text
 1. Create the repo.
-   gh repo create chasqui-stack/skills --public \
-     --description "Agent Skills for building & extending Chasqui stacks"
-   Clone locally as ~/proyectos/pet-projects/chasqui-skills (sibling of chasqui-cli).
+   gh repo create itisrohit/skills --public \
+     --description "Agent Skills for building & extending TrTalk stacks"
+   Clone locally as ~/proyectos/pet-projects/trtalk-skills (sibling of trtalk-cli).
    Add LICENSE (Apache-2.0) + .gitignore (.DS_Store, node_modules/, .claude).
 
 2. Manifests (.claude-plugin/), copied-and-adapted from langchain-skills:
-   - marketplace.json: name "chasqui-skills", owner, one plugin pointing "./".
+   - marketplace.json: name "trtalk-skills", owner, one plugin pointing "./".
    - plugin.json: name/version "0.1.0"/description, "skills": "./config/skills/",
-     keywords [whatsapp, telegram, ai-agent, langgraph, chasqui, agent-skills].
+     keywords [whatsapp, telegram, ai-agent, langgraph, trtalk, agent-skills].
 
-3. config/skills/chasqui-primer/SKILL.md  (ROUTER — build first)
-   frontmatter description: "INVOKE FIRST for any work on a Chasqui stack …
+3. config/skills/trtalk-primer/SKILL.md  (ROUTER — build first)
+   frontmatter description: "INVOKE FIRST for any work on a TrTalk stack …
      omakase philosophy, the 3 services (core/admin/channel gateways), the
-     canonical contract, and which Chasqui skill to load next."
-   body: overview (what Chasqui is, omakase, channel-agnostic), the contract
+     canonical contract, and which TrTalk skill to load next."
+   body: overview (what TrTalk is, omakase, channel-agnostic), the contract
      pointer (pinned URL §5), a decision table → "creating a channel? load
-     chasqui-create-channel. Using the CLI? load chasqui-cli." Keep it thin.
+     trtalk-create-channel. Using the CLI? load trtalk-cli." Keep it thin.
 
-4. config/skills/chasqui-cli/SKILL.md  (model on langgraph-cli/SKILL.md)
-   description: "INVOKE when using the chasqui CLI to scaffold or extend a stack:
-     uvx chasqui new, the wizard, --ref, chasqui generate module."
-   body: install (uvx chasqui new <name>), wizard steps, --ref override (ADR-005),
-     `chasqui generate module` (already in cli.py). Pointer to cli repo AGENTS.md
+4. config/skills/trtalk-cli/SKILL.md  (model on langgraph-cli/SKILL.md)
+   description: "INVOKE when using the trtalk CLI to scaffold or extend a stack:
+     uvx trtalk new, the wizard, --ref, trtalk generate module."
+   body: install (uvx trtalk new <name>), wizard steps, --ref override (ADR-005),
+     `trtalk generate module` (already in cli.py). Pointer to cli repo AGENTS.md
      for the release ceremony. Commands + when-to-use, à la langgraph-cli.
 
-5. config/skills/chasqui-create-channel/SKILL.md  (HIGHEST LEVERAGE)
-   description: "INVOKE when adding a NEW channel gateway to a Chasqui stack
+5. config/skills/trtalk-create-channel/SKILL.md  (HIGHEST LEVERAGE)
+   description: "INVOKE when adding a NEW channel gateway to a TrTalk stack
      (a new messaging platform). Walks the canonical-contract inbound /ingest +
      outbound /send seam, using the Telegram gateway as the worked example."
    body: the procedure — (a) read the contract (pinned §5 + §5.1) and ADR-004,
@@ -194,18 +194,18 @@ one source of truth and the skill carries almost no driftable surface.
      (d) ERROR_REPLY/UNSUPPORTED_REPLY are gateway-local (CLAUDE.md). All as
      pointers to the pinned docs + telegram example, not pasted code.
 
-6. README.md — install matrix (npx skills add chasqui-stack/skills --skill '*'
+6. README.md — install matrix (npx skills add itisrohit/skills --skill '*'
    [--global]; Claude Code plugin via /plugin marketplace add). skills.sh badge.
    One-paragraph "what these are" + link to ADR-009.
 
-7. CLI hook (chasqui-cli, separate PR on that repo):
+7. CLI hook (trtalk-cli, separate PR on that repo):
    In cli.py `new`, after the existing success output, print:
      "Teach your agent to extend this stack:
-        npx skills add chasqui-stack/skills --skill '*'"
+        npx skills add itisrohit/skills --skill '*'"
    (Behind nothing — always shown; it's a hint, not provisioning.)
 
-8. Release ceremony: in chasqui-cli/AGENTS.md, add the skills repo to the tag
-   order — bump skills' pinned URLs + tag chasqui-stack/skills vX.Y.Z in step
+8. Release ceremony: in trtalk-cli/AGENTS.md, add the skills repo to the tag
+   order — bump skills' pinned URLs + tag itisrohit/skills vX.Y.Z in step
    with STACK_TAG. (Docs change; can ride task 7's PR or its own.)
 ```
 
@@ -228,7 +228,7 @@ done
 
 ```bash
 # every pinned raw URL in every skill returns 200 (and uses a tag, not main)
-grep -rhoE 'https://raw.githubusercontent.com/chasqui-stack/[^ )]+' config/skills \
+grep -rhoE 'https://raw.githubusercontent.com/itisrohit/[^ )]+' config/skills \
   | sort -u | while read u; do
     echo "$u" | grep -q '/main/' && echo "BAD (uses main): $u"
     code=$(curl -s -o /dev/null -w '%{http_code}' "$u"); echo "$code  $u"
@@ -241,16 +241,16 @@ grep -rhoE 'https://raw.githubusercontent.com/chasqui-stack/[^ )]+' config/skill
 ```bash
 # install into a throwaway dir; confirm the three skills land
 mkdir -p /tmp/skills-smoke && cd /tmp/skills-smoke
-npx skills add chasqui-stack/skills --skill '*' --yes
-ls .claude/skills/ 2>/dev/null   # expect chasqui-primer, chasqui-cli, chasqui-create-channel
-# Manual: in an agent, ask "add a Discord channel to my Chasqui stack" →
-# chasqui-primer should trigger and route to chasqui-create-channel.
+npx skills add itisrohit/skills --skill '*' --yes
+ls .claude/skills/ 2>/dev/null   # expect trtalk-primer, trtalk-cli, trtalk-create-channel
+# Manual: in an agent, ask "add a Discord channel to my TrTalk stack" →
+# trtalk-primer should trigger and route to trtalk-create-channel.
 ```
 
 ### Level 4: CLI hint
 
 ```bash
-cd ../chasqui-cli && uvx --from . chasqui new demo --skip-provision \
+cd ../trtalk-cli && uvx --from . trtalk new demo --skip-provision \
   && echo "<look for the 'npx skills add' line in the output>"
 ```
 
@@ -262,7 +262,7 @@ cd ../chasqui-cli && uvx --from . chasqui new demo --skip-provision \
 - [ ] No contract/code text copied into a skill (pointer-only).
 - [ ] `npx skills add` (local + global) and the Claude plugin path both work.
 - [ ] primer routes; cli mirrors langgraph-cli; create-channel uses Telegram as example.
-- [ ] `chasqui new` prints the install hint (cli PR).
+- [ ] `trtalk new` prints the install hint (cli PR).
 - [ ] cli/AGENTS.md release ceremony updated for lockstep.
 - [ ] README install matrix + ADR-009 link.
 
@@ -286,7 +286,7 @@ every other skill needs; the cli is the lowest-risk CLI-as-reference (already
 modeled by langgraph-cli); create-channel is the highest-leverage and best
 showcase of the channel-agnostic design — and Telegram (sprint 9) is a ready
 worked example. Skills 4–7 (module/tool/adr/deploy) follow once the pattern proves
-out. Note the CLI already ships `chasqui generate module`, so `chasqui-create-module`
+out. Note the CLI already ships `trtalk generate module`, so `trtalk-create-module`
 will largely point at that command + `docs/MODULES.md`.
 
 **Lockstep mechanics.** The only per-release work is bumping the tag segment in the
@@ -294,7 +294,7 @@ pinned URLs and tagging the skills repo `vX.Y.Z`. Cheap by design — that's why
 do it now. A future `make bump-skill-pins` could sed the tag across `config/skills`.
 
 **Out of scope (future):** skills 4–7; the website Skills section + skills.sh badge
-(epic acceptance, separate task on chasqui-website); skills.sh telemetry/opt-out
+(epic acceptance, separate task on trtalk-website); skills.sh telemetry/opt-out
 guidance if we publish to the leaderboard; an `install.sh` like langchain-skills'.
 
 ---

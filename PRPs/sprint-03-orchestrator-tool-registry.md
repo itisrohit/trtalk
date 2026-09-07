@@ -17,7 +17,7 @@ Replace the `Echo:` stub in `core/app/services/orchestrator.py` with a real Lang
 
 ## Why
 
-- This is the moment Chasqui becomes an *agent* instead of an echo pipe — everything before (canonical contract, identity, persistence) existed to feed this turn.
+- This is the moment TrTalk becomes an *agent* instead of an echo pipe — everything before (canonical contract, identity, persistence) existed to feed this turn.
 - The Tool Registry is **the differentiator** (ARCHITECTURE §8): companies extend the agent by dropping modules, never editing core.
 - The editable prompt + enable/config columns are what Sprint 5's admin panel will surface — the data model must exist now.
 
@@ -63,7 +63,7 @@ A WhatsApp message arrives → gateway normalizes (now including media bytes) �
 | # | Decision | Rationale |
 |---|----------|-----------|
 | 1 | **`create_agent` + middleware** instead of hand-rolled `StateGraph` | psicolab predates LangChain v1; the prebuilt agent IS router→ToolNode→respond, and middleware gives us `wrap_model_call`/`wrap_tool_call` exactly as ARCHITECTURE §8 prescribes. Custom nodes can still be added later (the result is a compiled LangGraph graph). |
-| 2 | **`agent_config` singleton table** (system_prompt, enabled_tools JSONB, tool_config JSONB) | Chasqui = one project per deployment (no multi-tenant). Migration 003 seeds the default row; Sprint 5 admin edits it. |
+| 2 | **`agent_config` singleton table** (system_prompt, enabled_tools JSONB, tool_config JSONB) | TrTalk = one project per deployment (no multi-tenant). Migration 003 seeds the default row; Sprint 5 admin edits it. |
 | 3 | **Media as base64 `data:` URI in canonical `media_url`** | Meta media URLs expire (~5 min) and require the WA token — the core must stay channel-agnostic, so the **gateway** downloads bytes (PyWa `download()` → tempfile → base64) and ships a self-contained data URI. Contract unchanged (`media_url` is still a URI). Only the **current** inbound message is sent multimodal; history stays text-only (token control). |
 | 4 | **Memory extraction via `save_memory` tool** (memory module) instead of a post-turn LLM pass | One LLM call per turn instead of two; the model saves silently when relevant (proven pattern in psicolab). `extract_after_turn()` seam stays as a documented no-op for batch extraction later. `retrieve_relevant()` becomes real: Google embeddings (text-embedding-004, 768d) + pgvector cosine. |
 | 5 | **Turn runs BEFORE persisting the inbound row** | History query then naturally returns only *prior* messages (no self-exclusion hacks). Single transaction semantics unchanged (failure rolls back everything either way). Inbound keeps `received_at` as `created_at`, so ordering is preserved. |
@@ -152,7 +152,7 @@ cd core && make test                  # all unit + DB tests
 # → gateway :8000 → user messages +1 555-658-0492:
 #   text question (history+prompt respected), image+caption, voice note,
 #   "necesito hablar con un humano" (human_handoff tool fires)
-psql chasqui -c "select direction,type,left(text,60) from messages order by created_at desc limit 6;"
+psql trtalk -c "select direction,type,left(text,60) from messages order by created_at desc limit 6;"
 ```
 
 ## Final Checklist

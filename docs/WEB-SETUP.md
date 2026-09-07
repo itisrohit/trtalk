@@ -6,7 +6,7 @@ paste one `<script>` tag. This guide ends with the exact `.env` mapping.
 
 ## 1. Run the gateway
 
-`chasqui new` scaffolds it when you opt in to the web channel. Manually:
+`trtalk new` scaffolds it when you opt in to the web channel. Manually:
 
 ```bash
 cd web && npm install
@@ -65,7 +65,7 @@ Scaffolded before the web channel existed (or skipped it in the wizard)? No
 re-scaffold needed — one command from your project root:
 
 ```bash
-uvx chasqui add channel web
+uvx trtalk add channel web
 ```
 
 It fetches `web/` at your project's stack tag, writes `web/.env` reusing the
@@ -78,7 +78,7 @@ origins), wires `CHANNEL_WEB_SEND_URL` into `core/.env` and runs
 
 ```bash
 # from your project root — fetch the service at your stack's tag
-npx degit chasqui-stack/web#v0.4.0 web
+npx degit itisrohit/web#v0.4.0 web
 
 cp web/.env.example web/.env
 # in web/.env: set INTERNAL_API_KEY to the SAME value as core/.env,

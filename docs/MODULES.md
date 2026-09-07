@@ -1,22 +1,22 @@
 # Writing a Tool Module
 
-Tool Modules are **the** extension point of Chasqui (ARCHITECTURE §8): every
+Tool Modules are **the** extension point of TrTalk (ARCHITECTURE §8): every
 capability you add to an agent — price lookups, booking, CRM sync — is a
 self-contained package under `core/app/modules/` that the core discovers at
 startup. You never edit the core.
 
 Reference implementations, in increasing order of surface:
 
-- [`core/app/modules/memory/`](https://github.com/chasqui-stack/core/tree/main/app/modules/memory) — tools only
-- [`core/app/modules/faq/`](https://github.com/chasqui-stack/core/tree/main/app/modules/faq) — tools + table + admin routes + config (**read this one first**)
-- [`core/app/modules/handoff/`](https://github.com/chasqui-stack/core/tree/main/app/modules/handoff) — conversation-state side effects + notifications
+- [`core/app/modules/memory/`](https://github.com/itisrohit/core/tree/main/app/modules/memory) — tools only
+- [`core/app/modules/faq/`](https://github.com/itisrohit/core/tree/main/app/modules/faq) — tools + table + admin routes + config (**read this one first**)
+- [`core/app/modules/handoff/`](https://github.com/itisrohit/core/tree/main/app/modules/handoff) — conversation-state side effects + notifications
 
 ## Scaffold
 
 ```bash
-chasqui generate module price_check                # tools + config + test
-chasqui generate module price_check --with-models  # + SQLModel table
-chasqui generate module price_check --with-admin   # + /admin/modules/price_check routes
+trtalk generate module price_check                # tools + config + test
+trtalk generate module price_check --with-models  # + SQLModel table
+trtalk generate module price_check --with-admin   # + /admin/modules/price_check routes
 ```
 
 ## The contract

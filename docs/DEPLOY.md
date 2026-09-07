@@ -1,8 +1,8 @@
-# Deploying Chasqui with Kamal 2
+# Deploying TrTalk with Kamal 2
 
 Three services, one VM (or three — Kamal doesn't care), auto-TLS via the
 Kamal proxy. Each service ships its own `config/deploy.yml` +
-`.kamal/secrets.example`; `chasqui new` can pre-fill the placeholders
+`.kamal/secrets.example`; `trtalk new` can pre-fill the placeholders
 (domain, registry user, server IP) if you answer the deploy questions.
 
 | Service | Hostname (convention) | Port | Image |

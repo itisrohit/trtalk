@@ -1,7 +1,7 @@
 # ADR-010 — STT fallback for inbound audio (transcribe when the LLM can't hear)
 
 > **Status:** Accepted — 2026-06-15
-> **Sprint:** 12 (STT fallback) — chasqui#15
+> **Sprint:** 12 (STT fallback) — trtalk#15
 > **Related:** ARCHITECTURE §5 (canonical contract — `audio` media), ADR-003 (media storage / re-hydration), ADR-008 (coalesced turn re-hydrates media), `app/core/llm_capabilities.py` (`caps.audio`), `app/services/orchestrator.py` (`_current_message` degradation)
 
 ## Context
@@ -19,7 +19,7 @@ What happens next depends on the configured LLM:
   to retype. Correct, but a dead end — the user already spoke.
 
 The gap: for an audio-less LLM there is **no way to act on a voice note** even
-though transcription is a cheap, well-understood step. chasqui#15 asks for an
+though transcription is a cheap, well-understood step. trtalk#15 asks for an
 **opt-in STT fallback** that transcribes the audio *before* the turn so any LLM
 can answer it as if it were text.
 

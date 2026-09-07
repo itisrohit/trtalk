@@ -1,4 +1,4 @@
-"""Bridge Evolution API webhooks to the Chasqui canonical contract.
+"""Bridge Evolution API webhooks to the TrTalk canonical contract.
 
 This adapter is intentionally separate from the official PyWa gateway. It is
 for local prototyping with a separate WhatsApp number connected by QR code.

@@ -1,21 +1,21 @@
-# PRP — `chasqui add channel <name>`: retrofit a channel into an existing project
+# PRP — `trtalk add channel <name>`: retrofit a channel into an existing project
 
-**Issue:** [cli#5](https://github.com/chasqui-stack/cli/issues/5) · **Repo:** `chasqui-stack/cli` · **Sprint:** 14
+**Issue:** [cli#5](https://github.com/itisrohit/cli/issues/5) · **Repo:** `itisrohit/cli` · **Sprint:** 14
 
 ## Goal
 
-Projects scaffolded with `chasqui new` are degit snapshots — one plain repo, no
+Projects scaffolded with `trtalk new` are degit snapshots — one plain repo, no
 upstream. Users who skipped a channel in the wizard (or scaffolded before a
 channel existed, e.g. web/ADR-011) have no command to add one later; today the
 path is manual (`docs/WEB-SETUP.md`, "Adding it to an existing project").
 
-`chasqui add channel <whatsapp|telegram|web>`, run from a project root, does
+`trtalk add channel <whatsapp|telegram|web>`, run from a project root, does
 that retrofit: fetch the gateway dir at the project's stack tag, render its
 `.env` reusing the **existing** `INTERNAL_API_KEY`, ask only that channel's
 wizard questions, wire `CHANNEL_<CH>_SEND_URL` into `core/.env`, provision
 best-effort.
 
-**Out of scope:** `chasqui upgrade` (three-way merge against user-edited code).
+**Out of scope:** `trtalk upgrade` (three-way merge against user-edited code).
 
 ## Context — everything already exists; this is composition
 
@@ -28,13 +28,13 @@ best-effort.
 | Provision | `provision.Step` / `provision.run` | one step: `uv sync` (python gateways) or `npm install` (web) |
 | Next-steps text | `epilogue.build` channel sections | extracted into per-channel helpers shared by `build` and a new `build_add` |
 
-New module: `src/chasqui/add_channel.py` (detection + orchestration).
+New module: `src/trtalk/add_channel.py` (detection + orchestration).
 
 ## Key decisions
 
 - **Project detection:** `core/.env` present in cwd ⇒ project root. Anything
   else refuses with a pointer to run it from the generated directory.
-- **Stack ref:** parsed from the generated `README.md` (`chasqui new` writes
+- **Stack ref:** parsed from the generated `README.md` (`trtalk new` writes
   "…stack vX.Y.Z"); `--ref` overrides; fall back to the CLI's pinned
   `STACK_TAG` with a warning. Fetching the *project's* tag keeps the new
   gateway contemporaneous with the rest of the snapshot.
@@ -45,7 +45,7 @@ New module: `src/chasqui/add_channel.py` (detection + orchestration).
   (`PORT`, default 8090), not assumed.
 - **Idempotence:** refuse politely if `<channel>/` exists; appending
   `CHANNEL_<CH>_SEND_URL` is skipped if the key is already present.
-- **No git commit** — unlike `chasqui new` (which births the repo), `add`
+- **No git commit** — unlike `trtalk new` (which births the repo), `add`
   mutates the *user's* repo; changes are left staged-for-review.
 
 ## Tasks
@@ -67,7 +67,7 @@ New module: `src/chasqui/add_channel.py` (detection + orchestration).
 ```bash
 uv run pytest                      # all green, new suite included
 # manual: scaffold with --channels whatsapp, then:
-uv run chasqui add channel telegram --defaults --skip-provision --source ~/…/chasqui
+uv run trtalk add channel telegram --defaults --skip-provision --source ~/…/trtalk
 ```
 
 Acceptance: gateway dir laid at the project's tag · gateway `.env` carries the

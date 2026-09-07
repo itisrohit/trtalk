@@ -25,7 +25,7 @@ Storage is **optional**: unset → exactly today's behavior. **Ships in the firs
 
 ## What
 
-### Part A — Core (`chasqui-stack/core`)
+### Part A — Core (`itisrohit/core`)
 
 | Piece | Behavior |
 |---|---|
@@ -35,7 +35,7 @@ Storage is **optional**: unset → exactly today's behavior. **Ships in the firs
 | `has_media` flag | `MessageItem` grows `has_media: bool` = media_url holds a stored key (`media/` prefix). The raw key/blob is still never serialized. |
 | Settings + `.env.example` | `storage_endpoint_url`, `storage_bucket`, `storage_access_key`, `storage_secret_key`, `storage_region` (+ `storage_configured` property). |
 
-### Part B — Admin (`chasqui-stack/admin`)
+### Part B — Admin (`itisrohit/admin`)
 
 - `useMediaUrl(messageId, enabled)` hook → `GET /admin/media/{id}`, `staleTime` < presign expiry.
 - `MessageMedia` component in the conversation bubbles: `type === "image"` → `<img>` (click = open full in new tab), `type === "audio"` → `<audio controls>`; loading skeleton; on error or `!has_media` → today's type badge. All new strings via `t()` (es/en), as always.

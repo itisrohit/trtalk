@@ -1,6 +1,6 @@
-# AGENTS.md — Chasqui (parent)
+# AGENTS.md — TrTalk (parent)
 
-Chasqui is a base development stack for building custom AI agents on WhatsApp. This is the **parent repo**: it orchestrates three services as git submodules and holds the docs, planning, and project generator.
+TrTalk is a base development stack for building custom AI agents on WhatsApp. This is the **parent repo**: it orchestrates three services as git submodules and holds the docs, planning, and project generator.
 
 > **Read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) before working.** It is the source of truth for the design.
 
@@ -8,11 +8,11 @@ Chasqui is a base development stack for building custom AI agents on WhatsApp. T
 
 | Path | Repo | Stack | Role |
 |------|------|-------|------|
-| `core/` | `chasqui-stack/core` | FastAPI + LangGraph + Postgres/pgvector | The heart: ingest, orchestrator, memory, RAG, tool registry, admin auth |
-| `admin/` | `chasqui-stack/admin` | React 19 + Vite + Tailwind + shadcn/ui | Operator panel (prompts, FAQ-RAG, tool config, conversations) |
-| `whatsapp/` | `chasqui-stack/whatsapp` | PyWa 4.x (BSUID-first) + FastAPI | Stateless WhatsApp channel adapter |
-| `telegram/` | `chasqui-stack/telegram` | python-telegram-bot + FastAPI | Stateless Telegram channel adapter |
-| `web/` | `chasqui-stack/web` | Express + Vite + Preact (compat) | Embeddable chat widget + SSE gateway (ADR-011) — the one channel that ships its own client |
+| `core/` | `itisrohit/core` | FastAPI + LangGraph + Postgres/pgvector | The heart: ingest, orchestrator, memory, RAG, tool registry, admin auth |
+| `admin/` | `itisrohit/admin` | React 19 + Vite + Tailwind + shadcn/ui | Operator panel (prompts, FAQ-RAG, tool config, conversations) |
+| `whatsapp/` | `itisrohit/whatsapp` | PyWa 4.x (BSUID-first) + FastAPI | Stateless WhatsApp channel adapter |
+| `telegram/` | `itisrohit/telegram` | python-telegram-bot + FastAPI | Stateless Telegram channel adapter |
+| `web/` | `itisrohit/web` | Express + Vite + Preact (compat) | Embeddable chat widget + SSE gateway (ADR-011) — the one channel that ships its own client |
 
 Services talk only through the **canonical message contract** (`docs/ARCHITECTURE.md` §5). The core never knows a channel exists.
 
@@ -27,9 +27,9 @@ Services talk only through the **canonical message contract** (`docs/ARCHITECTUR
 - **End-of-sprint rule:** a sprint isn't closed until docs reflect it (service READMEs/AGENTS, ADRs for decisions taken, design docs for new archetypes).
 - **PRPs:** feature planning lives here in `PRPs/` (prp-manager skill: `npx skills add https://github.com/willywg/prp-manager --skill prp-manager`). Write a PRP before non-trivial features.
 - **Sprint plan:** `docs/sprints/` — **internal, gitignored** (contains local paths). Not public.
-- **Tracking:** issues live in each service repo; epics/cross-cutting here. Board: *Chasqui Roadmap* (org-level Project), grouped by `Sprint`/`Service`.
+- **Tracking:** issues live in each service repo; epics/cross-cutting here. Board: *TrTalk Roadmap* (org-level Project), grouped by `Sprint`/`Service`.
 - **Branches:** `feat/<short>`, `fix/<short>`, `docs/<short>`; conventional commits; PR `Closes #N`.
-- **Releasing a version:** strict order — tag services (`vX.Y.Z`) → bump parent submodules + tag → CLI pins the stack tag and publishes to PyPI by pushing its own tag (trusted publishing). **The full ceremony is documented in the [`cli` repo's AGENTS.md](https://github.com/chasqui-stack/cli/blob/main/AGENTS.md)** — read it before tagging anything.
+- **Releasing a version:** strict order — tag services (`vX.Y.Z`) → bump parent submodules + tag → CLI pins the stack tag and publishes to PyPI by pushing its own tag (trusted publishing). **The full ceremony is documented in the [`cli` repo's AGENTS.md](https://github.com/itisrohit/cli/blob/main/AGENTS.md)** — read it before tagging anything.
 
 ## Conventions
 

@@ -3,7 +3,7 @@
 > **Version:** 1.0
 > **Created:** 2026-06-17
 > **Status:** Draft
-> **Tracks:** chasqui#23 (epic — Web channel).
+> **Tracks:** trtalk#23 (epic — Web channel).
 > **Decision:** [ADR-011](../docs/design/adr-011-web-channel.md) — Node monolith
 > (Express + Vite + Preact via `preact/compat`), anonymous visitor UUID, live
 > outbound over SSE (complete messages; chunked streaming deferred), one new
@@ -15,7 +15,7 @@
 
 Ship the **third channel**: an embeddable **chat bubble** a company drops on any
 page via `<script>`. An **anonymous** visitor chats with the agent; the core
-stays channel-agnostic. New service `chasqui-stack/web` (submodule, sibling of
+stays channel-agnostic. New service `itisrohit/web` (submodule, sibling of
 `whatsapp/`/`telegram/`) — a **Node monolith** that is *both* the gateway and the
 client it ships.
 
@@ -29,7 +29,7 @@ var** + **one generic** internal history endpoint — nothing else.
 
 - **Proves channel-agnostic where it's hardest** — real-time + anonymous identity,
   the one shape messaging platforms don't exercise (epic #23, ADR-011 Context).
-- **Most demo-able channel** — a *"Habla con Chasqui"* bubble on `chasqui-website`
+- **Most demo-able channel** — a *"Habla con TrTalk"* bubble on `trtalk-website`
   is dogfooding + a live landing in one.
 - **Inherits the hard parts for free** — media (ADR-003), STT (ADR-010),
   coalescing/deferred dispatch (ADR-008). The real work is two seams: **identity**
@@ -43,12 +43,12 @@ A Node monolith + one tiny core change, gated by one env var per channel:
    pattern) **and** a **generic internal history read** —
    `GET /conversations/{channel}/{external_id}/messages` under `INTERNAL_API_KEY`
    — so a gateway can rehydrate a thread without an admin JWT. + ARCHITECTURE §5.
-2. **`chasqui-stack/web` — `src/server` (Express):** `POST /chat` (inbound relay →
+2. **`itisrohit/web` — `src/server` (Express):** `POST /chat` (inbound relay →
    `/ingest`), `GET /stream` (SSE, `visitor→stream` map), `POST /send` (core's
    deferred reply → push down the SSE), `GET /history` (proxy the core read),
    serves `widget.js` + the **demo harness**, `GET /health`. Holds
    `INTERNAL_API_KEY` + origin allowlist + rate-limit.
-3. **`chasqui-stack/web` — `src/widget` (Vite + Preact/compat):** `<script>` →
+3. **`itisrohit/web` — `src/widget` (Vite + Preact/compat):** `<script>` →
    Shadow-DOM bubble → chatbox; visitor UUID in `localStorage`; `EventSource` for
    replies; media (image upload + mic record); rehydrate-on-open.
 4. **A generic `demo.html`** the server serves (e.g. `/demo`) with the widget
@@ -105,7 +105,7 @@ operator enables it in the wizard. The core change is inert until
 - file: admin/  [submodule]
   why: the DX + design system to BORROW (Vite, Tailwind, shadcn tokens, DESIGN.md) — NOT the deployable (static SPA charter, ADR-011 Alternatives)
 - file: admin/DESIGN.md
-  why: Chasqui brand tokens for the widget (amber #EA9B27, terracotta #C94B22, charcoal #1C1917; Rubik)
+  why: TrTalk brand tokens for the widget (amber #EA9B27, terracotta #C94B22, charcoal #1C1917; Rubik)
 - url: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
   why: SSE (EventSource client, text/event-stream server) — the outbound transport
 - url: https://preactjs.com/guide/v10/switching-to-preact  (preact/compat)
@@ -211,7 +211,7 @@ async def read_history(channel: str, external_id: str, limit: int = 50,
 # Tests: requires the key; scopes by (channel, external_id); has_media only.
 ```
 
-### Server (`chasqui-stack/web/src/server`, Express + TS)
+### Server (`itisrohit/web/src/server`, Express + TS)
 ```text
 config.ts        CORE_URL, INTERNAL_API_KEY, WEB_ALLOWED_ORIGINS, PORT,
                  RATE_LIMIT_*, ERROR_REPLY, UNSUPPORTED_REPLY, WEB_PUBLIC_URL
@@ -234,22 +234,22 @@ middleware:      originAllowlist (Origin/Referer vs WEB_ALLOWED_ORIGINS) + CORS;
                  rateLimit per visitor/IP; verifyInternalKey on /send.
 ```
 
-### Widget (`chasqui-stack/web/src/widget`, Vite + Preact/compat + TS)
+### Widget (`itisrohit/web/src/widget`, Vite + Preact/compat + TS)
 ```text
 - mounts a Shadow DOM root; injects scoped styles (Tailwind build → shadow);
   reads data-* (data-gateway) off its <script>.
-- visitor.ts: getOrCreate UUID in localStorage (key "chasqui_web_visitor").
+- visitor.ts: getOrCreate UUID in localStorage (key "trtalk_web_visitor").
 - on open: GET /history -> render past turns; new EventSource(`${gw}/stream?visitor=`).
 - send: optimistic-render the user bubble; POST /chat; reply arrives via SSE 'message'.
 - media: <input type=file> (image) + MediaRecorder (mic→audio) -> base64 data: URI.
 - reconnect: EventSource auto-retries; cap/backoff; show a subtle "reconnecting".
 - UI: floating bubble -> chatbox (visitor right / agent left, markdown, media inline),
-  Chasqui tokens from admin/DESIGN.md (amber accent, charcoal chrome, Rubik).
+  TrTalk tokens from admin/DESIGN.md (amber accent, charcoal chrome, Rubik).
 ```
 
-### The demo harness (`chasqui-stack/web/public/demo.html`, served at /demo)
+### The demo harness (`itisrohit/web/public/demo.html`, served at /demo)
 ```html
-<!doctype html><html><head><meta charset="utf-8"><title>Chasqui web widget — demo</title></head>
+<!doctype html><html><head><meta charset="utf-8"><title>TrTalk web widget — demo</title></head>
 <body style="font-family:system-ui;max-width:680px;margin:3rem auto">
   <h1>Demo landing</h1>
   <p>Filler content so the bubble floats over a realistic page. Open the bubble
@@ -282,7 +282,7 @@ Task 2: Core change B — generic internal history read
   - MODIFY: docs/ARCHITECTURE.md §5 (the internal read-mirror)
 
 Task 3: New repo + submodule
-  - CREATE: chasqui-stack/web (Node, TS, Express, Vite, Preact + preact/compat,
+  - CREATE: itisrohit/web (Node, TS, Express, Vite, Preact + preact/compat,
     Tailwind, vitest, Dockerfile, config/deploy.yml, AGENTS.md + CLAUDE.md symlink)
   - ADD as submodule web/ in the parent; commit the pointer
 
@@ -316,7 +316,7 @@ Task 11 (cross-repo): CLI wizard opt-in  -> file cli#N
   - stack.py: add "web" to CHANNEL_SERVICES; envfiles: web/.env block.
 
 Task 12: Dogfood + docs
-  - "Habla con Chasqui" bubble on chasqui-website
+  - "Habla con TrTalk" bubble on trtalk-website
   - docs/WEB-SETUP.md (embed snippet, allowlist, deploy); parent README/
     ARCHITECTURE channel list + landing; new repo README/AGENTS
 ```
@@ -400,7 +400,7 @@ cd core && grep -rin '"web"\|web_send\|webwidget\|websocket' app | grep -v test
       origin-refusal
 - [ ] Level 5 grep clean (no web-specific core logic)
 - [ ] New repo `AGENTS.md`/README; submodule pinned; CLI wizard opt-in (cli#N);
-      WEB-SETUP.md; parent README/ARCHITECTURE/landing; chasqui-website bubble
+      WEB-SETUP.md; parent README/ARCHITECTURE/landing; trtalk-website bubble
 - [ ] Multi-replica caveat + chunked-streaming + media-on-rehydration documented as
       follow-ups (not silently assumed)
 
@@ -439,6 +439,6 @@ It is the acceptance gate (Level 4) and a permanent QA fixture; it is dev-only a
 never shipped to customers.
 
 **The new archetype is a conscious cost (ADR-011).** First non-Python gateway; no
-verbatim reuse from whatsapp/telegram; the `chasqui-create-channel` skill/docs gain
+verbatim reuse from whatsapp/telegram; the `trtalk-create-channel` skill/docs gain
 a note that a channel may be a JS monolith when it ships its own client. Recorded,
 not smuggled.

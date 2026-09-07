@@ -14,7 +14,7 @@ docker compose -f docker-compose.yml -f docker-compose.evolution.yml \
   --profile evolution up -d --build
 ```
 
-This starts Chasqui, PostgreSQL/pgvector, Evolution API, Evolution's Redis
+This starts TrTalk, PostgreSQL/pgvector, Evolution API, Evolution's Redis
 and database, and the adapter at `http://localhost:8001`.
 
 ## Create and QR-pair the instance
@@ -48,9 +48,9 @@ returned `base64`/`code` value or open Evolution's Swagger UI at
 ## Test
 
 Send a message from another WhatsApp account to the paired number. The
-Evolution webhook forwards it to Chasqui's `/ingest`; Chasqui's response is
+Evolution webhook forwards it to TrTalk's `/ingest`; TrTalk's response is
 sent back through Evolution. Voice notes are forwarded when Evolution sends
-media base64 in the webhook; Chasqui can then use its configured native-audio
+media base64 in the webhook; TrTalk can then use its configured native-audio
 model or STT fallback.
 
 Evolution documents `MESSAGES_UPSERT` webhooks, instance creation, webhook

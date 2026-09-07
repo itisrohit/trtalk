@@ -15,7 +15,7 @@ The `faq` module stops being a stub: admins manage **Q&A pairs** (one table — 
 ## Why
 
 - The #1 use case of a WhatsApp business agent: answer company questions **without hallucinating**. Grounded retrieval is the difference between a demo and a product.
-- Proves the module contract end-to-end (tools + models + admin routes + config) — the blueprint every future module (and `chasqui generate module`, Sprint 6) copies.
+- Proves the module contract end-to-end (tools + models + admin routes + config) — the blueprint every future module (and `trtalk generate module`, Sprint 6) copies.
 - Memory contradictions ("Soltero" + "Casado" coexist, seen in Sprint 3 e2e) make long-term memory untrustworthy — fix before the admin panel exposes it.
 
 ## What
@@ -56,7 +56,7 @@ The `faq` module stops being a stub: admins manage **Q&A pairs** (one table — 
 
 ### Key decisions (made in this PRP)
 
-1. **Module anatomy** (the blueprint `chasqui generate module` will scaffold):
+1. **Module anatomy** (the blueprint `trtalk generate module` will scaffold):
    ```
    app/modules/faq/
    ├── __init__.py    # FaqModule (register_tools/register_models/register_admin_routes/config_schema) + faq_search tool

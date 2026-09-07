@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="docs/assets/brand/chasqui-logo.png" alt="Chasqui" width="440">
+<img src="docs/assets/brand/trtalk-logo.png" alt="TrTalk" width="440">
 
 **Open-source stack for building custom AI chat agents — self-hosted, channel-agnostic, production-minded.**
 
-**[chasqui.chat](https://chasqui.chat)** · WhatsApp · Telegram · embeddable web widget
+**[trtalk.chat](https://trtalk.chat)** · WhatsApp · Telegram · embeddable web widget
 
-[![PyPI](https://img.shields.io/pypi/v/chasqui?label=chasqui%20CLI)](https://pypi.org/project/chasqui/)
+[![PyPI](https://img.shields.io/pypi/v/trtalk?label=trtalk%20CLI)](https://pypi.org/project/trtalk/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
 </div>
 
 ```bash
-uvx chasqui new my-agent
+uvx trtalk new my-agent
 ```
 
 One command, one wizard, and you have a running AI agent: a single
@@ -23,10 +23,10 @@ and reply from the panel, lead capture, and a pluggable tool/module system
 where you build each company's differentiating logic. The LLM is a `.env`
 swap: Gemini, Claude, GPT, OpenRouter or local Ollama.
 
-> Named after the *chasqui* — the relay messengers of the Inca empire who
-> carried messages across the network.
+> TrTalk is built around a simple idea: small, reliable pieces that move
+> information quickly between people and businesses.
 
-Chasqui is opinionated on purpose: the plumbing decisions are already made —
+TrTalk is opinionated on purpose: the plumbing decisions are already made —
 PostgreSQL + pgvector, one canonical message contract between services,
 conventions over configuration — so your energy goes into your agent's
 logic, not into infrastructure. Every non-obvious decision is written down
@@ -44,7 +44,7 @@ no account at all — one `<script>` tag
 ([`docs/WEB-SETUP.md`](./docs/WEB-SETUP.md)).
 
 ```bash
-uvx chasqui new my-agent      # the wizard asks: LLM, embeddings, where's
+uvx trtalk new my-agent      # the wizard asks: LLM, embeddings, where's
 cd my-agent                   # your Postgres, ports, WhatsApp creds
                               # (skippable), language, first admin — then
                               # provisions everything (deps, db, migrations)
@@ -100,12 +100,12 @@ flowchart LR
 
 | Repo | Stack | Role |
 |------|-------|------|
-| [`core`](https://github.com/chasqui-stack/core) | FastAPI · LangGraph · SQLModel · Postgres/pgvector | The conversation engine: ingest, agent, memory, RAG, tool registry, handoff inbox, admin auth |
-| [`whatsapp`](https://github.com/chasqui-stack/whatsapp) | PyWa 4.x (BSUID-first) · FastAPI | WhatsApp channel gateway |
-| [`telegram`](https://github.com/chasqui-stack/telegram) | python-telegram-bot · FastAPI | Telegram channel gateway — same canonical contract |
-| [`web`](https://github.com/chasqui-stack/web) | Express · Vite · Preact (compat) | Embeddable chat widget + SSE gateway — same contract, live replies in the browser |
-| [`admin`](https://github.com/chasqui-stack/admin) | React 19 · Vite · Tailwind · shadcn/ui | Operator panel: prompts, FAQ, tools, conversations, inbox, leads |
-| [`cli`](https://github.com/chasqui-stack/cli) | typer · PyPI `chasqui` | `chasqui new` / `chasqui generate module` |
+| [`core`](https://github.com/itisrohit/core) | FastAPI · LangGraph · SQLModel · Postgres/pgvector | The conversation engine: ingest, agent, memory, RAG, tool registry, handoff inbox, admin auth |
+| [`whatsapp`](https://github.com/itisrohit/whatsapp) | PyWa 4.x (BSUID-first) · FastAPI | WhatsApp channel gateway |
+| [`telegram`](https://github.com/itisrohit/telegram) | python-telegram-bot · FastAPI | Telegram channel gateway — same canonical contract |
+| [`web`](https://github.com/itisrohit/web) | Express · Vite · Preact (compat) | Embeddable chat widget + SSE gateway — same contract, live replies in the browser |
+| [`admin`](https://github.com/itisrohit/admin) | React 19 · Vite · Tailwind · shadcn/ui | Operator panel: prompts, FAQ, tools, conversations, inbox, leads |
+| [`cli`](https://github.com/itisrohit/cli) | typer · PyPI `trtalk` | `trtalk new` / `trtalk generate module` |
 
 Full design: **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)**.
 
@@ -124,7 +124,7 @@ docstring), optional tables, admin routes, and config knobs that the panel
 auto-renders as a form — zero frontend work.
 
 ```bash
-chasqui generate module price_check --with-models --with-admin
+trtalk generate module price_check --with-models --with-admin
 ```
 
 Guide: [`docs/MODULES.md`](./docs/MODULES.md).

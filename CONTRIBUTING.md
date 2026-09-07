@@ -1,19 +1,19 @@
-# Contributing to Chasqui
+# Contributing to TrTalk
 
-Chasqui is a base development stack for building custom AI agents on WhatsApp. Before contributing, read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+TrTalk is a base development stack for building custom AI agents on WhatsApp. Before contributing, read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-The system is three services under the `chasqui-stack` org, orchestrated by this parent repo via git submodules:
+The system is three services under the `itisrohit` org, orchestrated by this parent repo via git submodules:
 
 | Repo | Role |
 |------|------|
-| `chasqui-stack/core` | FastAPI + LangGraph backend (the heart) |
-| `chasqui-stack/admin` | React + Vite admin panel |
-| `chasqui-stack/whatsapp` | PyWa gateway (WhatsApp channel) |
-| `chasqui-stack/chasqui` | Parent: docs, generator, submodules |
+| `itisrohit/core` | FastAPI + LangGraph backend (the heart) |
+| `itisrohit/admin` | React + Vite admin panel |
+| `itisrohit/whatsapp` | PyWa gateway (WhatsApp channel) |
+| `itisrohit/trtalk` | Parent: docs, generator, submodules |
 
 ## Project management (no Linear — GitHub-native)
 
-- **Single board:** the org-level GitHub Project **"Chasqui Roadmap"** (`github.com/orgs/chasqui-stack/projects`) is the source of truth across all repos.
+- **Single board:** the org-level GitHub Project **"TrTalk Roadmap"** (`github.com/orgs/itisrohit/projects`) is the source of truth across all repos.
 - **Issues live in the repo they belong to** (`core`/`admin`/`whatsapp`); epics and cross-cutting work go in the parent. Every issue is added to the board.
 - **Board fields:** `Status`, `Sprint` (0–6), `Service`.
 - **Labels:** `service:{core,admin,whatsapp,parent}`, `sprint:{0..6}`, `type:{feat,fix,docs,chore}`, `good first issue`.

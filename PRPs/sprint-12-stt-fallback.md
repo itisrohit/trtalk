@@ -3,7 +3,7 @@
 > **Version:** 1.0
 > **Created:** 2026-06-15
 > **Status:** Draft
-> **Tracks:** chasqui#15 (STT fallback for audio).
+> **Tracks:** trtalk#15 (STT fallback for audio).
 > **Decisions to record:** ADR-010 (opt-in STT, gated on `caps.audio=False`;
 > one OpenAI-compatible client, **Groq default** for native OGG/Opus + cost;
 > separate `STT_API_KEY`; graceful degradation preserved).
@@ -304,7 +304,7 @@ Task 8 (cross-repo): CLI wizard opt-in  → file cli#N
   - Add a wizard question "Enable speech-to-text for voice notes (LLMs without
     native audio)?" → writes STT_PROVIDER/STT_MODEL/STT_API_KEY to core/.env.
   - Default suggestion groq + whisper-large-v3-turbo. Mirrors cli#1 provisioning.
-  - Skills: note STT in the chasqui-cli skill env table (sibling skills repo).
+  - Skills: note STT in the trtalk-cli skill env table (sibling skills repo).
 ```
 
 ---
