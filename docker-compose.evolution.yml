@@ -1,0 +1,75 @@
+services:
+  evolution-postgres:
+    image: postgres:16-alpine
+    profiles: ["evolution"]
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: evolutionpass
+    volumes:
+      - evolution-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  evolution-redis:
+    image: redis:7-alpine
+    profiles: ["evolution"]
+    command: redis-server --appendonly yes
+    volumes:
+      - evolution-redis-data:/data
+
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.7
+    profiles: ["evolution"]
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_URL: http://localhost:8080
+      SERVER_PORT: "8080"
+      AUTHENTICATION_API_KEY: dev-evolution-key
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:evolutionpass@evolution-postgres:5432/evolution
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://evolution-redis:6379
+      CACHE_LOCAL_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      LANGUAGE: en
+      LOG_LEVEL: ERROR,WARN,INFO,LOG
+    volumes:
+      - evolution-store:/evolution/store
+      - evolution-instances:/evolution/instances
+
+  evolution-gateway:
+    build: ./evolution-gateway
+    profiles: ["evolution"]
+    depends_on:
+      - core
+      - evolution-api
+    environment:
+      EVOLUTION_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: dev-evolution-key
+      EVOLUTION_INSTANCE: agproto
+      CORE_URL: http://core:8090
+      INTERNAL_API_KEY: devkey
+      WEBHOOK_SECRET: dev-webhook-secret
+    ports:
+      - "8001:8001"
+
+  core:
+    environment:
+      CHANNEL_WHATSAPP_SEND_URL: http://evolution-gateway:8001/send
+
+volumes:
+  evolution-postgres-data:
+  evolution-redis-data:
+  evolution-store:
+  evolution-instances:
