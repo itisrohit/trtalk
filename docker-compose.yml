@@ -80,6 +80,9 @@ services:
       STT_PROVIDER: ${STT_PROVIDER:-}
       STT_API_KEY: ${STT_API_KEY:-}
       STT_MODEL: ${STT_MODEL:-whisper-large-v3-turbo}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-google}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-gemini-embedding-001}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
       # Media storage (ADR-003): core uploads via the docker network, but
       # presigned URLs must be browser-reachable → public endpoint override.
       STORAGE_ENDPOINT_URL: "http://storage:9000"
