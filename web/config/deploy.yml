@@ -1,0 +1,34 @@
+# Kamal 2 deploy config for the TrTalk web gateway (template — fill placeholders).
+# Deploys after the core (the core must expose CHANNEL_WEB_SEND_URL → this service).
+service: trtalk-web
+
+image: <your-registry-user>/trtalk-web
+
+servers:
+  web:
+    - <SERVER_IP>
+
+proxy:
+  ssl: true
+  host: chat.example.com # the widget is served + embedded from here
+  app_port: 8002
+
+registry:
+  server: <registry-host> # e.g. ghcr.io
+  username: <registry-user>
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    PORT: 8002
+    CORE_URL: https://api.example.com
+    WEB_ALLOWED_ORIGINS: https://example.com # the customer sites embedding the widget
+    RATE_LIMIT_WINDOW_MS: 60000
+    RATE_LIMIT_MAX: 30
+    HISTORY_LIMIT: 50
+  secret:
+    - INTERNAL_API_KEY # must equal the core's INTERNAL_API_KEY

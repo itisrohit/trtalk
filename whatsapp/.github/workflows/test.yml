@@ -1,0 +1,27 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Stateless gateway — no DB. Settings require these (no defaults), so give
+    # CI dummy values; nothing here calls the WhatsApp Cloud API.
+    env:
+      WA_TOKEN: "ci-dummy"
+      WA_VERIFY_TOKEN: "ci-dummy"
+      WA_APP_ID: "1"
+      WA_APP_SECRET: "ci-dummy"
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv + Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync
+      - run: uv run pytest -q

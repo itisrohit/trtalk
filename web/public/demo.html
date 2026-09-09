@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrTalk web widget — demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 680px; margin: 3rem auto; padding: 0 1rem; color: #1c1917; line-height: 1.6; }
+      h1 { color: #1c1917; }
+      .muted { color: #78716c; }
+      code { background: #f5f5f4; padding: 2px 5px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>Demo landing</h1>
+    <p class="muted">
+      A dev-only page (never shipped to customers) to test the widget over a
+      realistic page. Open the bubble bottom-right and try:
+    </p>
+    <ul>
+      <li>Type <code>hola</code> → the agent replies in real time.</li>
+      <li>Send an image and record a voice note.</li>
+      <li>Reload the page → your conversation rehydrates.</li>
+    </ul>
+    <p class="muted">
+      The embed below is the same one a customer would paste. It talks only to
+      this gateway; the gateway holds the internal key and talks to the core.
+    </p>
+
+    <!-- The real embed. data-gateway omitted → defaults to this script's origin. -->
+    <script src="/widget.js"></script>
+  </body>
+</html>

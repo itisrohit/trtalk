@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --font-sans: "Rubik", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Monaco", "SFMono-Regular", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.625rem;
+  /* TrTalk brand palette (DESIGN.md + parent docs/assets/brand): warm
+     neutrals derived from the mark — amber #EA9B27 is THE accent,
+     terracotta #C94B22 is destructive/attention, charcoal #1C1917 is ink. */
+  --brand: #ea9b27;
+  --brand-foreground: #1c1917;
+
+  --background: #f8f5ee;
+  --foreground: #221c16;
+  --card: #ffffff;
+  --card-foreground: #221c16;
+  --popover: #ffffff;
+  --popover-foreground: #221c16;
+  --primary: #1c1917;
+  --primary-foreground: #f7f1e5;
+  --secondary: #f1ebdf;
+  --secondary-foreground: #221c16;
+  --muted: #f0eae0;
+  --muted-foreground: #786a58;
+  --accent: #f5e9d2;
+  --accent-foreground: #1c1917;
+  --destructive: #c94b22;
+  --destructive-foreground: #ffffff;
+  --border: #e6decf;
+  --input: #dfd6c4;
+  --ring: #ea9b27;
+  /* Status colors */
+  --success: oklch(0.65 0.15 145);
+  --warning: oklch(0.75 0.15 85);
+  --info: oklch(0.60 0.15 250);
+  /* Channel brand accents — used ONLY as subtle badge tints + the brand glyph
+     color (category chips, not part of the single-amber CTA hierarchy). */
+  --channel-whatsapp: #1faa55;
+  --channel-telegram: #229ed9;
+  /* Sidebar — charcoal chrome (the mark's canvas) with an amber active state */
+  --sidebar: #1c1917;
+  --sidebar-foreground: #d8cfc2;
+  --sidebar-primary: #ea9b27;
+  --sidebar-primary-foreground: #1c1917;
+  --sidebar-accent: #ea9b27;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #3a322a;
+  --sidebar-ring: #ea9b27;
+}
+
+.dark {
+  --brand: #ea9b27;
+  --brand-foreground: #1c1917;
+
+  --background: #1c1917;
+  --foreground: #f3ede3;
+  --card: #262019;
+  --card-foreground: #f3ede3;
+  --popover: #262019;
+  --popover-foreground: #f3ede3;
+  --primary: #ea9b27;
+  --primary-foreground: #1c1917;
+  --secondary: #322a21;
+  --secondary-foreground: #ede6da;
+  --muted: #2b241c;
+  --muted-foreground: #b5ab9c;
+  --accent: #383021;
+  --accent-foreground: #f3ede3;
+  --destructive: #e0633c;
+  --destructive-foreground: #1c1917;
+  --border: #3a322a;
+  --input: #3a322a;
+  --ring: #ea9b27;
+  --success: oklch(0.70 0.15 145);
+  --warning: oklch(0.80 0.15 85);
+  --info: oklch(0.65 0.15 250);
+  /* Channel brand accents (brighter for dark surfaces) */
+  --channel-whatsapp: #25d366;
+  --channel-telegram: #3aa9e0;
+  --sidebar: #161210;
+  --sidebar-foreground: #d8cfc2;
+  --sidebar-primary: #ea9b27;
+  --sidebar-primary-foreground: #1c1917;
+  --sidebar-accent: #ea9b27;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #3a322a;
+  --sidebar-ring: #ea9b27;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  /* Tailwind 4 dropped the Preflight cursor:pointer on buttons — restore it
+     (https://tailwindcss.com/docs/upgrade-guide#buttons-use-the-default-cursor).
+     Radix/shadcn menu and select items are DIVs with ARIA roles, not
+     <button>s, so they need the same treatment. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="menuitem"]:not([data-disabled]),
+  [role="menuitemcheckbox"]:not([data-disabled]),
+  [role="menuitemradio"]:not([data-disabled]),
+  [role="option"]:not([data-disabled]),
+  [role="tab"]:not([data-disabled]) {
+    cursor: pointer;
+  }
+}

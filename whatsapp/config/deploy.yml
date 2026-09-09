@@ -1,0 +1,59 @@
+# Kamal 2 deploy config — TrTalk WhatsApp gateway.
+# Placeholders to replace per project: registry username, server IP, hosts.
+service: trtalk-whatsapp
+
+# Name of the container image.
+image: your-username/trtalk-whatsapp
+
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - 203.0.113.10 # your server IP
+
+registry:
+  username: your-username
+  password:
+    - DOCKER_REGISTRY_PASSWORD
+
+# Inject ENV variables into containers (secrets come from .kamal/secrets).
+# Remember to run `kamal env push` after making changes!
+env:
+  clear:
+    PORT: 8000
+    # Where the core lives (the gateway POSTs /ingest there).
+    CORE_URL: "https://api.example.com"
+  secret:
+    # --- WhatsApp Business credentials ---
+    # WA_PHONE_ID is REQUIRED for operator replies (POST /send, ADR-004).
+    - WA_PHONE_ID
+    - WA_TOKEN
+    - WA_VERIFY_TOKEN
+    - WA_APP_ID
+    - WA_APP_SECRET
+    - WA_WABA_ID
+    # --- Gateway -> core shared secret (same value as the core's) ---
+    - INTERNAL_API_KEY
+    # --- Sentry (optional) — uncomment + add to .kamal/secrets to enable:
+    # - SENTRY_DSN
+
+ssh:
+  user: deploy
+
+builder:
+  arch: amd64
+
+proxy:
+  ssl: true
+  host: "wsp.example.com"
+  app_port: 8000
+  healthcheck:
+    path: /health
+
+aliases:
+  apps: server exec docker exec kamal-proxy kamal-proxy list
+  stats: server exec "docker stats --no-stream"
+  stats-live: server exec -i "docker stats"
+  ps: server exec "docker ps"
+  app-terminal: app exec -i "bash"
+  logs: app logs -f

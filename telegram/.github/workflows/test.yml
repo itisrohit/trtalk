@@ -1,0 +1,25 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Stateless gateway — no DB. Settings require these two (no defaults), so
+    # give CI dummy values; nothing here calls Telegram.
+    env:
+      TELEGRAM_BOT_TOKEN: "0:ci-dummy-token"
+      TELEGRAM_WEBHOOK_SECRET: "ci-dummy-secret"
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv + Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync
+      - run: uv run pytest -q

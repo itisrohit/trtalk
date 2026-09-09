@@ -1,0 +1,29 @@
+[project]
+name = "trtalk-whatsapp"
+version = "0.1.0"
+description = "TrTalk WhatsApp gateway — stateless PyWa channel adapter"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.128.0",
+    "gunicorn>=23.0.0",
+    "httpx>=0.28.0",
+    "pydantic-settings>=2.12.0",
+    "pywa[fastapi]>=4.0.0",
+    "sentry-sdk>=2.52.0",
+    "uvicorn[standard]>=0.40.0",
+]
+
+# Dev group: installed by a plain `uv sync` (so a freshly generated project
+# can run `make test` out of the box) — unlike an optional extra.
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "respx>=0.21.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"

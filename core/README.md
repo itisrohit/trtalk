@@ -1,0 +1,201 @@
+# TrTalk Core
+
+FastAPI + LangGraph backend — the heart of [TrTalk](https://github.com/itisrohit/trtalk), the open-source stack for building custom AI chat agents (WhatsApp first; more channels on the roadmap).
+
+Handles the canonical `/ingest` entry point, the agent orchestrator (LangGraph), conversation memory, FAQ-RAG (pgvector), the pluggable **tool registry**, and admin authentication.
+
+## Stack
+
+FastAPI · SQLModel · PostgreSQL + pgvector · Alembic · JWT · LangChain · LangGraph · `uv`.
+
+## Local dev
+
+```bash
+cp .env.example .env     # configure DB + JWT + LLM key
+uv sync
+make migrate
+make dev                 # http://localhost:8090  (/docs) — port via PORT in .env
+```
+
+## The agent
+
+`POST /ingest` runs a real LangGraph turn (LangChain v1 `create_agent`):
+DB-editable system prompt (`agent_config`, editable in the admin panel) + conversation
+history + long-term memories (pgvector) + the current message — multimodal
+(image/audio content blocks) when the configured model supports it.
+
+**Swappable LLM** — a `.env` change, never code (`app/core/llm.py`):
+
+```bash
+LLM_PROVIDER=google     LLM_MODEL=gemini-2.5-flash      # default (multimodal)
+LLM_PROVIDER=anthropic  LLM_MODEL=claude-sonnet-4-6
+LLM_PROVIDER=openai     LLM_MODEL=gpt-5-mini
+LLM_PROVIDER=openrouter LLM_MODEL=vendor/model
+LLM_PROVIDER=ollama     LLM_MODEL=llama3.3              # local, no key
+```
+
+Per-model vision/audio support is auto-detected (`app/core/llm_capabilities.py`);
+unknown models degrade to text-only with a warning (override with
+`LLM_SUPPORTS_VISION` / `LLM_SUPPORTS_AUDIO`).
+
+**Voice notes on an audio-less LLM** (ADR-010): set `STT_PROVIDER` (default Groq
+`whisper-large-v3-turbo` — native OGG/Opus, cheapest) + a separate `STT_API_KEY`
+and inbound audio is transcribed to text before the turn. Unset = the agent asks
+the user to type it. Native-audio models (Gemini) ignore STT and hear directly.
+
+**Embeddings are swappable too** (`app/core/embeddings.py`, via
+`init_embeddings()`): `EMBEDDING_PROVIDER` google/openai/ollama. The vector
+width is **`EMBEDDING_DIM` (default 768) — provision-time config**: it's
+baked into the schema on the first migrate; changing it (or the provider)
+later means a column migration + re-embedding. ANN indexes are
+**auto-selected from the dim** (`app/core/vector_search.py`): ≤2000 → HNSW
+on `vector` · 2001–4000 → HNSW on a `halfvec` cast · >4000 → exact scan +
+startup warning. Rationale: parent repo
+`docs/design/adr-001-embeddings-provider-dims.md` (and ADR-002 for why
+Postgres-only).
+
+## Tool modules (the extension point)
+
+Drop a self-contained package under `app/modules/` exposing a module-level
+`module` attribute — it is discovered at startup and its tools reach the
+agent **without touching core code**:
+
+```python
+# app/modules/my_feature/__init__.py
+from langchain.tools import tool
+
+@tool
+def my_tool(query: str) -> str:
+    """When and how the model should use it (the docstring is the manual)."""
+    return "..."
+
+class MyModule:
+    name = "my_feature"
+    def register_tools(self):
+        return [my_tool]
+
+module = MyModule()
+```
+
+Tools access the DB session / contact / conversation / config through
+`runtime: ToolRuntime[TurnContext]` (`app/services/agent_context.py`).
+Disable any tool at runtime via `agent_config.enabled_tools`
+(`{"my_tool": false}`); tool exceptions become error `ToolMessage`s — the
+graph never crashes.
+
+Beyond tools, a module can contribute **its own tables**
+(`register_models()` — `registry.discover()` runs in `alembic/env.py` and
+the test conftest so they reach the metadata), **admin endpoints**
+(`register_admin_routes()` — mounted JWT-protected under
+`/admin/modules/<name>`) and **typed config knobs** (`config_schema()` →
+stored in `agent_config.tool_config` under the module's `config_key`,
+auto-rendered as a settings form in the admin panel). Keep config schemas
+**flat** (str/int/float/bool fields only) — that's what the form renderer
+understands.
+
+Shipped examples: **`faq`** — the full-contract reference: Q&A knowledge
+base with pgvector RAG (embed-on-save, threshold retrieval, honest miss),
+admin CRUD + re-embed at `/admin/modules/faq/*`; **`handoff`** — human
+handoff (flips the conversation to human mode + optional webhook/email
+notification) and lead capture into a module-owned `leads` table with
+operator-configurable required/extra fields; **`memory`** (silent fact
+saving with dedup-on-save, plus `update_memory`/`forget_memory`
+corrections).
+Full walkthrough: parent repo `docs/design/module-example-commercial-locations.md`.
+
+## Admin panel API
+
+JWT-protected endpoints backing the [admin panel](https://github.com/itisrohit/admin)
+(everything an operator changes takes effect on the agent's **next turn** — no redeploy):
+
+- `GET/PUT /admin/config` — the `agent_config` singleton: system prompt,
+  per-tool enable map (`enabled_tools`, missing key = enabled) and module
+  settings (`tool_config`). Writes are validated against the registry: unknown
+  tool names and schema-violating values are rejected with 422.
+- `GET /admin/tools` — the tool registry: every module with its tools, enable
+  state, `config_key` and JSON Schema (feeds the admin's auto-forms).
+- `GET /admin/contacts` (+`/{id}`, `/{id}/messages`, `/{id}/memories`) —
+  conversation inspection. Embeddings and media payloads are never
+  serialized (messages carry a `has_media` boolean instead). The list grows
+  inbox metadata (ADR-004): `mode`, handoff reason, `last_inbound_at`,
+  a `?mode=human` filter and attention-first ordering.
+- `PUT /admin/contacts/{id}/mode` — take over (`human`) / resume the bot
+  (`agent`); `POST /admin/contacts/{id}/messages` — operator reply pushed
+  through the channel gateway's `/send` (409 in agent mode; send-then-persist,
+  gateway error codes like `WINDOW_EXPIRED` pass through). ADR-004.
+- `GET /admin/modules/handoff/leads` — captured leads (module-contributed).
+- `GET /admin/media/{message_id}` — short-lived presigned URL (as JSON) for a
+  message's stored media; the panel feeds it to `<img>`/`<audio>`.
+- `GET /admin/modules/faq/search?q=` — retrieval preview with similarity
+  scores (module-contributed, like the rest of `/admin/modules/faq/*`).
+
+## Human handoff & outbound (ADR-004)
+
+`conversations.mode: "agent" | "human"` is checked **first** by `/ingest`:
+in human mode the inbound is persisted, **no agent turn runs**, and the
+canonical response is an empty `messages` list — silence on every channel,
+zero gateway changes. The `human_handoff` tool flips the mode; the admin
+flips it back.
+
+Operator replies go out through the **canonical outbound seam**
+(`app/services/channel_send.py`): each gateway exposes `POST /send` (the
+mirror of `/ingest`, same `INTERNAL_API_KEY`) and the core resolves the URL
+per channel from `.env` — `CHANNEL_WHATSAPP_SEND_URL`, one var per channel.
+Text and media alike: image/document/audio travel as base64 `data:` URIs
+(the mirror of the inbound contract) and are also stored in the bucket so
+the admin timeline shows what the operator sent.
+
+Handoffs can notify, both optional and best-effort (`app/services/notify_service.py`):
+`NOTIFY_WEBHOOK_URL` (Slack/Zapier/n8n) and/or **SMTP email** via stdlib
+`smtplib` — any relay works (Brevo, Mailgun, SES, Gmail app password):
+`SMTP_HOST/PORT/USER/PASSWORD/FROM` + `NOTIFY_EMAIL_TO`.
+
+## Inbound coalescing (ADR-008)
+
+People fragment a thought across several quick messages. With
+`INBOUND_DEBOUNCE_SECONDS > 0` (**default 5**), `/ingest` persists each inbound
+and arms a per-conversation silence window instead of replying inline; after the
+burst settles, a Postgres-backed worker (`FOR UPDATE SKIP LOCKED`, multi-replica
+safe, no broker) folds the whole batch into **one** turn and dispatches the reply
+through the outbound seam above (`app/services/coalesce_worker.py`).
+
+So **`CHANNEL_<CH>_SEND_URL` is required per active channel** when debounce > 0 —
+that's where the deferred reply goes (the core warns at startup if it's missing).
+Set `INBOUND_DEBOUNCE_SECONDS=0` to keep the **legacy synchronous** reply in the
+`/ingest` response (no worker). A per-identity advisory lock serializes turns in
+both modes.
+
+## Media storage (optional, ADR-003)
+
+Inbound images/audio arrive as base64 `data:` URIs (canonical contract). With
+storage configured, the core uploads each one to an **S3-compatible bucket**
+(`boto3`) at persist time — key `media/<contact_id>/<message_id>.<ext>` stored
+in `messages.media_url` — and serves it back to the admin via presigned URLs.
+Four `.env` vars (`STORAGE_ENDPOINT_URL`, `STORAGE_BUCKET`,
+`STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`) cover AWS S3, Cloudflare R2,
+Spaces, B2 and the local dev bucket (the parent's `docker-compose` ships
+RustFS with the bucket pre-created — dev/test only; production points at a
+managed bucket). Unset = media is processed in-turn but not persisted —
+degraded, not broken; upload failures never break the turn. The LLM context
+stays text-only either way. See `app/core/storage.py` and
+[`adr-003`](https://github.com/itisrohit/trtalk/blob/main/docs/design/adr-003-media-storage.md).
+
+## Testing
+
+```bash
+make test                # = uv run pytest
+```
+
+DB-backed tests run against a dedicated **`<postgres_db>_test`** database (e.g. `trtalk_test`), **auto-created on first run** from the same connection settings as the app — your dev database is never touched. No extra setup: the only requirement is that your Postgres user can `CREATE DATABASE`.
+
+Isolation follows the SQLAlchemy-recommended transactional-rollback pattern: each test runs inside an outer transaction (app `commit()`s become savepoints) that is rolled back at the end, so **nothing is ever written** to the test database and tests can't contaminate each other. See `tests/conftest.py`.
+
+To point tests at another Postgres (e.g. CI), export `POSTGRES_HOST` / `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` — real env vars take priority over `.env`.
+
+## Architecture
+
+This service speaks only the **canonical message contract** — it never knows about WhatsApp. See the parent's [`docs/ARCHITECTURE.md`](https://github.com/itisrohit/trtalk/blob/main/docs/ARCHITECTURE.md) (§5 contract, §6 domain model, §8 tool registry, §10 BSUID).
+
+## License
+
+[Apache-2.0](./LICENSE).

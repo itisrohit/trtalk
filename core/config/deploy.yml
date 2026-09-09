@@ -1,0 +1,93 @@
+# Kamal 2 deploy config — TrTalk core.
+# Placeholders to replace per project: registry username, server IP, host.
+service: trtalk-core
+
+# Name of the container image.
+image: your-username/trtalk-core
+
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - 203.0.113.10 # your server IP
+
+registry:
+  username: your-username
+  password:
+    - DOCKER_REGISTRY_PASSWORD
+
+# Inject ENV variables into containers (secrets come from .kamal/secrets).
+# Remember to run `kamal env push` after making changes!
+env:
+  clear:
+    PORT: 8090
+    DEBUG: "false"
+    POSTGRES_HOST: trtalk-core-db
+    POSTGRES_PORT: 5432
+    CORS_ORIGINS: "*"
+    LLM_PROVIDER: google
+    LLM_MODEL: gemini-2.5-flash
+    EMBEDDING_PROVIDER: google
+    EMBEDDING_MODEL: gemini-embedding-001
+  secret:
+    # --- Database credentials ---
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+    # --- Admin JWT ---
+    - JWT_SECRET_KEY
+    # --- Gateway -> core shared secret (/ingest) ---
+    - INTERNAL_API_KEY
+    # --- LLM / embeddings ---
+    - GOOGLE_API_KEY
+    # --- Media storage (ADR-003, OPTIONAL — any managed S3-compatible
+    # bucket: S3, R2, Spaces, B2; never a self-hosted accessory here).
+    # Uncomment + add to .kamal/secrets to enable:
+    # - STORAGE_ENDPOINT_URL
+    # - STORAGE_BUCKET
+    # - STORAGE_ACCESS_KEY
+    # - STORAGE_SECRET_KEY
+    # - STORAGE_REGION
+
+ssh:
+  user: deploy
+
+builder:
+  arch: amd64
+
+proxy:
+  ssl: true
+  host: "api.example.com"
+  app_port: 8090
+
+accessories:
+  db:
+    # pgvector/pgvector (NOT plain postgres): init.sql runs CREATE EXTENSION
+    # vector — the official postgres image doesn't ship the extension.
+    image: pgvector/pgvector:pg17
+    host: 203.0.113.10 # your server IP
+    # Uses 127.0.0.1:5434 to avoid access from public network
+    port: "127.0.0.1:5434:5432"
+    env:
+      clear:
+        POSTGRES_USER: postgres
+        POSTGRES_DB: trtalk
+        POSTGRES_HOST_AUTH_METHOD: trust
+      secret:
+        - POSTGRES_PASSWORD
+    files:
+      - config/init.sql:/docker-entrypoint-initdb.d/setup.sql
+    directories:
+      - data:/var/lib/postgresql/data
+
+aliases:
+  apps: server exec docker exec kamal-proxy kamal-proxy list
+  stats: server exec "docker stats --no-stream"
+  stats-live: server exec -i "docker stats"
+  ps: server exec "docker ps"
+  htop: server exec -i "htop"
+  server-terminal: server exec -i "bash"
+  app-terminal: app exec -i "bash"
+  db-terminal: server exec -i "docker exec -it trtalk-core-db psql -U postgres -d trtalk"
+  db-migrate: app exec "alembic upgrade head"
+  logs: app logs -f
