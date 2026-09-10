@@ -104,6 +104,19 @@ async def search(
     return [(entry, 1.0 - dist) for entry, dist in result.all()]
 
 
+async def list_for_context(session: AsyncSession) -> list[FaqEntry]:
+    """Return the FAQ set for fast, no-embedding retrieval.
+
+    This mode is intended for the small knowledge bases used by the prototype.
+    A bounded result protects the prompt if the database grows before the
+    project switches back to vector search.
+    """
+    result = await session.exec(
+        select(FaqEntry).order_by(FaqEntry.updated_at.desc()).limit(50)
+    )
+    return list(result.all())
+
+
 async def reembed_all(session: AsyncSession) -> int:
     """Re-embed every entry (one batched call). Returns how many were updated.
 

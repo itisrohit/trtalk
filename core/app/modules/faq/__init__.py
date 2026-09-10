@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 class FaqSearchConfig(BaseModel):
     """Knobs surfaced in the admin panel (agent_config.tool_config['faq_search'])."""
 
+    use_embeddings: bool = Field(
+        default=True,
+        title="Use embedding search",
+        description="Use vector search for retrieval. Turn off for a small FAQ list to give the agent up to 50 entries for better nuanced answers.",
+    )
     top_k: int = Field(default=4, ge=1, le=20, description="Maximum number of results")
     min_similarity: float = Field(
         default=0.5,
@@ -62,18 +67,27 @@ async def faq_search(query: str, runtime: ToolRuntime[TurnContext]) -> str:
     ctx = runtime.context
     config = _tool_config(ctx)
 
-    hits = await service.search(
-        ctx.session,
-        query,
-        top_k=config.top_k,
-        min_similarity=config.min_similarity,
-    )
-    if not hits:
+    if config.use_embeddings:
+        entries = [
+            entry
+            for entry, _similarity in await service.search(
+                ctx.session,
+                query,
+                top_k=config.top_k,
+                min_similarity=config.min_similarity,
+            )
+        ]
+    else:
+        # For a small FAQ base, passing every entry avoids an embedding call and
+        # lets the model combine several related Q&As for nuanced questions.
+        entries = await service.list_for_context(ctx.session)
+
+    if not entries:
         return NO_RESULTS
 
     snippets = "\n\n".join(
         f"[{i}] Q: {entry.question}\nA: {entry.answer}"
-        for i, (entry, _similarity) in enumerate(hits, start=1)
+        for i, entry in enumerate(entries, start=1)
     )
     return (
         "Knowledge base information (base your answer ONLY on this):\n\n"

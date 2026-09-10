@@ -103,6 +103,11 @@
     "reembedAll": "Re-embed all",
     "reembedDone": "{{count}} entries re-embedded",
     "reembedError": "The embeddings provider failed — try again",
+    "embeddingMode": "Use embedding search",
+    "embeddingModeOn": "Best for more than 50 FAQs; retrieves the closest matching entries.",
+    "embeddingModeOff": "Fast mode for a small FAQ base; gives the agent up to 50 FAQs to handle nuanced questions.",
+    "modeSaved": "FAQ search mode saved",
+    "modeSaveError": "Could not save FAQ search mode",
     "empty": "No entries yet. Create the first one so the agent has something to answer from.",
     "validation": {
       "questionRequired": "Question is required",

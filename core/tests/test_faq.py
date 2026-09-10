@@ -182,6 +182,18 @@ async def test_faq_search_respects_admin_tool_config(session, fake_embeddings):
     assert "[2]" not in result  # top_k honored
 
 
+async def test_faq_search_fast_context_mode_skips_embeddings(session, fake_embeddings):
+    await make_entries(session)
+    runtime = await make_runtime(session, tool_config={"faq_search": {"use_embeddings": False}})
+    query_calls_before = len(fake_embeddings.query_calls)
+
+    result = await faq_search.coroutine(query="a nuanced question", runtime=runtime)
+
+    assert "Mon-Fri 9:00-18:00." in result
+    assert "Refunds are available within 30 days." in result
+    assert len(fake_embeddings.query_calls) == query_calls_before
+
+
 # ---------------------------------------------------------------------------
 # Admin routes (module contract: register_admin_routes)
 # ---------------------------------------------------------------------------

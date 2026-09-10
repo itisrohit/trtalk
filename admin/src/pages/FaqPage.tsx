@@ -10,6 +10,7 @@ import {
   useReembedAll,
   useUpdateFaqEntry,
 } from "@/hooks/useFaq"
+import { useAgentConfig, useUpdateAgentConfig } from "@/hooks/useAgentConfig"
 import type { FaqEntry } from "@/types/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -232,6 +234,8 @@ function SearchPreview() {
 export function FaqPage() {
   const { t, i18n } = useTranslation()
   const { data: entries, isLoading } = useFaqEntries()
+  const { data: config } = useAgentConfig()
+  const updateConfig = useUpdateAgentConfig()
   const deleteEntry = useDeleteFaqEntry()
   const reembedAll = useReembedAll()
 
@@ -270,6 +274,26 @@ export function FaqPage() {
     }
   }
 
+  const useEmbeddings = config?.tool_config?.faq_search?.use_embeddings !== false
+
+  const handleEmbeddingMode = async (enabled: boolean) => {
+    if (!config) return
+    try {
+      await updateConfig.mutateAsync({
+        tool_config: {
+          ...config.tool_config,
+          faq_search: {
+            ...(config.tool_config.faq_search ?? {}),
+            use_embeddings: enabled,
+          },
+        },
+      })
+      toast.success(t("faq.modeSaved"))
+    } catch {
+      toast.error(t("faq.modeSaveError"))
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -294,6 +318,23 @@ export function FaqPage() {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardContent className="flex items-center justify-between gap-4 pt-6">
+          <div className="space-y-1">
+            <p className="font-medium">{t("faq.embeddingMode")}</p>
+            <p className="text-sm text-muted-foreground">
+              {useEmbeddings ? t("faq.embeddingModeOn") : t("faq.embeddingModeOff")}
+            </p>
+          </div>
+          <Switch
+            checked={useEmbeddings}
+            onCheckedChange={handleEmbeddingMode}
+            disabled={!config || updateConfig.isPending}
+            aria-label={t("faq.embeddingMode")}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="pt-6">

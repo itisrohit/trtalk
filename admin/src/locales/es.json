@@ -103,6 +103,11 @@
     "reembedAll": "Re-vectorizar todo",
     "reembedDone": "{{count}} entradas re-vectorizadas",
     "reembedError": "El proveedor de embeddings falló — intenta de nuevo",
+    "embeddingMode": "Usar búsqueda por embeddings",
+    "embeddingModeOn": "Ideal para más de 50 FAQ; recupera las entradas más cercanas.",
+    "embeddingModeOff": "Modo rápido para una base FAQ pequeña; entrega hasta 50 FAQ para preguntas matizadas.",
+    "modeSaved": "Modo de búsqueda FAQ guardado",
+    "modeSaveError": "No se pudo guardar el modo de búsqueda FAQ",
     "empty": "Aún no hay entradas. Crea la primera para que el agente tenga de dónde responder.",
     "validation": {
       "questionRequired": "La pregunta es obligatoria",
