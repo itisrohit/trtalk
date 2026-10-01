@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { RefreshCw } from "lucide-react"
+import { LogOut, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,7 @@ export function WhatsAppPage() {
   const [qr, setQr] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [retryingHistory, setRetryingHistory] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -88,6 +89,27 @@ export function WhatsAppPage() {
     }
   }
 
+  const disconnect = async () => {
+    if (!window.confirm(t("whatsapp.disconnectConfirm"))) return
+    setDisconnecting(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const response = await fetch(`${evolutionUrl}/instance/logout/${instanceName}`, {
+        method: "POST",
+        headers: { apikey: evolutionApiKey },
+      })
+      if (!response.ok) throw new Error(`Evolution API returned ${response.status}`)
+      setState("close")
+      setQr(null)
+      setNotice(t("whatsapp.disconnected"))
+    } catch {
+      setError(t("whatsapp.disconnectError"))
+    } finally {
+      setDisconnecting(false)
+    }
+  }
+
   useEffect(() => {
     void refreshState()
   }, [refreshState])
@@ -134,9 +156,15 @@ export function WhatsAppPage() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex flex-wrap gap-3">
             {connected && (
-              <Button variant="outline" onClick={retryHistorySync} disabled={retryingHistory}>
+              <Button variant="outline" onClick={retryHistorySync} disabled={retryingHistory || disconnecting}>
                 <RefreshCw className={retryingHistory ? "animate-spin" : ""} />
                 {retryingHistory ? t("whatsapp.retryingHistory") : t("whatsapp.retryHistory")}
+              </Button>
+            )}
+            {connected && (
+              <Button variant="destructive" onClick={disconnect} disabled={disconnecting || retryingHistory}>
+                <LogOut />
+                {disconnecting ? t("whatsapp.disconnecting") : t("whatsapp.disconnect")}
               </Button>
             )}
             {!connected && (
