@@ -8,6 +8,7 @@ A scripted fake chat model drives the graph deterministically (no network):
 """
 
 import base64
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from langchain.tools import tool
@@ -18,7 +19,7 @@ from pydantic import Field
 from app.models import Contact, Conversation, Memory, Message
 from app.modules import registry
 from app.schemas.ingest import InboundMessage
-from app.services import agent_config_service, orchestrator
+from app.services import agent_config_service, language_id, orchestrator
 
 PNG_B64 = base64.b64encode(b"fake-png-bytes").decode()
 
@@ -94,6 +95,23 @@ async def make_conversation(session) -> Conversation:
 # ---------------------------------------------------------------------------
 
 
+def test_current_turn_language_guard_uses_only_newest_customer_text():
+    guard = orchestrator._current_turn_language_guard().content
+    assert "last newest customer message" in guard
+    assert "Earlier customer and assistant messages are factual context only" in guard
+    assert "never an assistant reply" in guard
+
+
+def test_language_lock_for_roman_hinglish_is_explicit():
+    preference = language_id.LanguagePreference("hi-IN", "Latn")
+    system = orchestrator._system_message(
+        AgentConfig(), [], orchestrator._capabilities(), language_preference=preference
+    )
+    assert "DETERMINISTIC LANGUAGE LOCK" in system.content
+    assert "Roman Hindi/Hinglish" in system.content
+    assert "Do not reply in Punjabi" in system.content
+
+
 async def test_turn_uses_db_system_prompt_history_and_memories(session, monkeypatch):
     conversation = await make_conversation(session)
 
@@ -143,8 +161,36 @@ async def test_turn_uses_db_system_prompt_history_and_memories(session, monkeypa
     assert "TrTalk-Bot" in system.content  # DB prompt respected
     assert "Se llama Willy" in system.content  # memory injected
     texts = [getattr(m, "content", "") for m in prompt_messages]
-    assert "Hola" in texts  # history present, oldest-first
-    assert texts[-1] == "¿Me ayudas?"  # current message last
+    assert "<conversation_context" in system.content
+    assert "Customer: Hola" in system.content
+    assert "Assistant: ¡Hola! ¿En qué te ayudo?" in system.content
+    assert "Use it only for facts" in system.content
+    assert "<current_customer_message>" in texts[-1]
+    assert "¿Me ayudas?" in texts[-1]  # current message remains last
+
+
+async def test_history_is_reference_only_and_capped_to_six_messages(session):
+    conversation = await make_conversation(session)
+    created_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    for number in range(7):
+        session.add(
+            Message(
+                conversation_id=conversation.id,
+                direction="in",
+                type="text",
+                text=f"old turn {number}",
+                created_at=created_at + timedelta(seconds=number),
+            )
+        )
+    await session.flush()
+
+    history = await orchestrator._history_context(session, conversation.id, 20)
+
+    assert history is not None
+    assert "old turn 0" not in history
+    assert "old turn 1" in history
+    assert "old turn 6" in history
+    assert "Never choose the reply language, script, tone, or current intent" in history
 
 
 # ---------------------------------------------------------------------------

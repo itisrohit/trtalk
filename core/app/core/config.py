@@ -34,11 +34,21 @@ class Settings(BaseSettings):
     # ollama + llama3.3, openrouter + <vendor/model>.
     llm_provider: str = "google"  # "google" | "anthropic" | "openai" | "openrouter" | "ollama"
     llm_model: str = "gemini-2.5-flash"
-    llm_temperature: float = 0.7
+    # Customer support needs consistent language/script selection.  A
+    # deterministic setting prevents a Roman Hindi turn from occasionally
+    # drifting into Roman Punjabi when older context contains Punjabi.
+    llm_temperature: float = 0.0
+    llm_max_tokens: int = 700
     google_api_key: str | None = None
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
     openai_base_url: str | None = None  # any OpenAI-compatible server
+    # Sarvam's native API key is also used for Language Identification.  The
+    # Docker Sarvam overlay maps this to OPENAI_API_KEY for chat compatibility,
+    # so either field may hold the same key.
+    sarvam_api_key: str | None = None
+    sarvam_lid_enabled: bool = True
+    sarvam_lid_timeout_seconds: float = 3.0
     openrouter_api_key: str | None = None
     ollama_base_url: str | None = None  # default http://localhost:11434
 

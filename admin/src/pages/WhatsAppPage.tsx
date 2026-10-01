@@ -10,7 +10,10 @@ const evolutionApiKey = import.meta.env.VITE_EVOLUTION_API_KEY || "dev-evolution
 const instanceName = "agproto"
 
 type ConnectionResponse = { instance?: { state?: string } }
-type ConnectResponse = { base64?: string | null }
+type ConnectResponse = {
+  base64?: string | null
+  instance?: { state?: string }
+}
 
 async function evolutionFetch<T>(path: string): Promise<T> {
   const response = await fetch(`${evolutionUrl}${path}`, {
@@ -25,13 +28,18 @@ export function WhatsAppPage() {
   const [state, setState] = useState("unknown")
   const [qr, setQr] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [retryingHistory, setRetryingHistory] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const refreshState = useCallback(async () => {
     try {
       const result = await evolutionFetch<ConnectionResponse>(`/instance/connectionState/${instanceName}`)
       setState(result.instance?.state ?? "unknown")
-      if (result.instance?.state === "open") setQr(null)
+      if (result.instance?.state === "open") {
+        setQr(null)
+        setNotice(null)
+      }
     } catch {
       setState("unavailable")
     }
@@ -43,6 +51,14 @@ export function WhatsAppPage() {
     try {
       const result = await evolutionFetch<ConnectResponse>(`/instance/connect/${instanceName}`)
       setQr(result.base64 ?? null)
+      if (!result.base64 && result.instance?.state === "open") {
+        setState("open")
+        setNotice(t("whatsapp.alreadyConnected"))
+      } else if (!result.base64) {
+        setNotice(t("whatsapp.qrWaiting"))
+      } else {
+        setNotice(null)
+      }
       await refreshState()
     } catch {
       setError(t("whatsapp.error"))
@@ -51,9 +67,41 @@ export function WhatsAppPage() {
     }
   }
 
+  const retryHistorySync = async () => {
+    if (!window.confirm(t("whatsapp.retryHistoryConfirm"))) return
+    setRetryingHistory(true)
+    setError(null)
+    setNotice(null)
+    try {
+      const response = await fetch(`${evolutionUrl}/instance/restart/${instanceName}`, {
+        method: "POST",
+        headers: { apikey: evolutionApiKey },
+      })
+      if (!response.ok) throw new Error(`Evolution API returned ${response.status}`)
+      setState("connecting")
+      setQr(null)
+      setNotice(t("whatsapp.retryHistoryStarted"))
+    } catch {
+      setError(t("whatsapp.retryHistoryError"))
+    } finally {
+      setRetryingHistory(false)
+    }
+  }
+
   useEffect(() => {
     void refreshState()
   }, [refreshState])
+
+  // Restarting an existing Evolution session is asynchronous. Keep the
+  // status current so the page does not remain stuck on "Connecting" and so
+  // a QR delivered shortly after the request can be displayed.
+  useEffect(() => {
+    if (state !== "connecting" && state !== "qr") return
+    const timer = window.setInterval(() => {
+      void refreshState()
+    }, 2000)
+    return () => window.clearInterval(timer)
+  }, [state, refreshState])
 
   const connected = state === "open"
 
@@ -82,8 +130,15 @@ export function WhatsAppPage() {
           )}
           {!connected && !qr && <p className="text-sm text-muted-foreground">{t("whatsapp.noQr")}</p>}
           {connected && <p className="text-sm text-green-700">{t("whatsapp.connected")}</p>}
+          {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex flex-wrap gap-3">
+            {connected && (
+              <Button variant="outline" onClick={retryHistorySync} disabled={retryingHistory}>
+                <RefreshCw className={retryingHistory ? "animate-spin" : ""} />
+                {retryingHistory ? t("whatsapp.retryingHistory") : t("whatsapp.retryHistory")}
+              </Button>
+            )}
             {!connected && (
               <Button onClick={generateQr} disabled={loading}>
                 <RefreshCw className={loading ? "animate-spin" : ""} />

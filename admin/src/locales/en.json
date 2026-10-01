@@ -71,7 +71,14 @@
     "qrAlt": "WhatsApp pairing QR code",
     "noQr": "No QR code generated yet.",
     "connected": "WhatsApp is connected. Send a message to the paired number to test the bot.",
+    "retryHistory": "Retry history sync",
+    "retryingHistory": "Reconnecting…",
+    "retryHistoryConfirm": "This will briefly disconnect WhatsApp and reconnect the saved session to retry history sync. New bot replies may pause briefly. It may fetch another batch, but a complete sync is not guaranteed. Continue?",
+    "retryHistoryStarted": "Reconnect started. WhatsApp may be briefly unavailable; history sync may continue in the background.",
+    "retryHistoryError": "Could not restart the WhatsApp connection. Check that Evolution API is available, then try again.",
     "error": "Could not reach the local WhatsApp service.",
+    "alreadyConnected": "WhatsApp is already connected; no new QR code is needed.",
+    "qrWaiting": "Waiting for Evolution API to provide a QR code…",
     "states": { "open": "Connected", "close": "Disconnected", "connecting": "Connecting", "unknown": "Unknown", "unavailable": "Unavailable" }
   },
   "prompt": {

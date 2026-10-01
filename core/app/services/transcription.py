@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_BASE_URLS = {
     "groq": "https://api.groq.com/openai/v1",
     "openai": "https://api.openai.com/v1",
+    "sarvam": "https://api.sarvam.ai",
 }
 
 
@@ -62,15 +63,28 @@ async def transcribe(audio: bytes, mime: str) -> str | None:
 
     ext = storage.ext_for_mime(mime) or "ogg"
     files = {"file": (f"audio.{ext}", audio, mime)}
-    data = {"model": settings.stt_model, "response_format": "text"}
-    if settings.stt_language:
-        data["language"] = settings.stt_language
-    headers = {"Authorization": f"Bearer {settings.stt_api_key}"}
+    if settings.stt_provider == "sarvam":
+        # Saaras has its own multipart contract and returns JSON.  `unknown`
+        # enables automatic detection of Hindi, Punjabi, English, and
+        # code-mixed Indian speech.
+        data = {
+            "model": settings.stt_model or "saaras:v4",
+            "language_code": settings.stt_language or "unknown",
+            "mode": "transcribe",
+        }
+        headers = {"api-subscription-key": settings.stt_api_key}
+        endpoint = f"{_base_url()}/speech-to-text"
+    else:
+        data = {"model": settings.stt_model, "response_format": "text"}
+        if settings.stt_language:
+            data["language"] = settings.stt_language
+        headers = {"Authorization": f"Bearer {settings.stt_api_key}"}
+        endpoint = f"{_base_url()}/audio/transcriptions"
 
     try:
         async with httpx.AsyncClient(timeout=settings.stt_timeout_seconds) as client:
             response = await client.post(
-                f"{_base_url()}/audio/transcriptions",
+                endpoint,
                 data=data,
                 files=files,
                 headers=headers,
@@ -80,6 +94,13 @@ async def transcribe(audio: bytes, mime: str) -> str | None:
         logger.warning("STT request failed (%s) — text fallback", exc)
         return None
 
-    # response_format=text → plain-text body (not JSON).
-    transcript = response.text.strip()
+    if settings.stt_provider == "sarvam":
+        try:
+            transcript = response.json().get("transcript", "").strip()
+        except ValueError:
+            logger.warning("Sarvam STT returned invalid JSON — text fallback")
+            return None
+    else:
+        # response_format=text → plain-text body (not JSON).
+        transcript = response.text.strip()
     return transcript or None

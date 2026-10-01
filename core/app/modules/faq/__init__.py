@@ -30,7 +30,7 @@ class FaqSearchConfig(BaseModel):
     )
     top_k: int = Field(default=4, ge=1, le=20, description="Maximum number of results")
     min_similarity: float = Field(
-        default=0.5,
+        default=0.7,
         ge=0.0,
         le=1.0,
         description="Minimum cosine similarity for a result to count as relevant",
@@ -54,11 +54,12 @@ NO_RESULTS = (
 
 @tool
 async def faq_search(query: str, runtime: ToolRuntime[TurnContext]) -> str:
-    """Search the company's knowledge base (frequently asked questions).
+    """Search the company's knowledge base when it is directly relevant.
 
-    ALWAYS use this tool when the user asks about business-specific
-    information: products, services, prices, schedules, policies,
-    locations, etc. Answer ONLY with what the tool returns.
+    Use this tool for business-specific questions when the knowledge base may
+    contain the answer. Treat returned entries as reference material: ignore
+    entries that do not answer the customer's actual question. Never force an
+    unrelated FAQ into the response and never invent missing details.
 
     Args:
         query: Key concepts of what the user needs to know
@@ -90,7 +91,10 @@ async def faq_search(query: str, runtime: ToolRuntime[TurnContext]) -> str:
         for i, entry in enumerate(entries, start=1)
     )
     return (
-        "Knowledge base information (base your answer ONLY on this):\n\n"
+        "Potentially relevant knowledge-base references follow. Use them only "
+        "if they directly answer the customer's latest question. If they do "
+        "not, ignore them and answer honestly or ask one clarifying question; "
+        "do not mention this search.\n\n"
         f"{snippets}"
     )
 

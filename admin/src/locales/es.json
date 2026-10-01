@@ -71,7 +71,14 @@
     "qrAlt": "Código QR para vincular WhatsApp",
     "noQr": "Todavía no se ha generado ningún código QR.",
     "connected": "WhatsApp está conectado. Envía un mensaje al número vinculado para probar el bot.",
+    "retryHistory": "Reintentar sincronización del historial",
+    "retryingHistory": "Reconectando…",
+    "retryHistoryConfirm": "Esto desconectará WhatsApp brevemente y volverá a conectar la sesión guardada para reintentar la sincronización del historial. Las respuestas del bot podrían pausarse un momento. Puede descargar otro lote, pero no se garantiza una sincronización completa. ¿Continuar?",
+    "retryHistoryStarted": "Reconexión iniciada. WhatsApp podría no estar disponible brevemente; la sincronización del historial puede continuar en segundo plano.",
+    "retryHistoryError": "No se pudo reiniciar la conexión de WhatsApp. Comprueba que Evolution API esté disponible e inténtalo de nuevo.",
     "error": "No se pudo acceder al servicio local de WhatsApp.",
+    "alreadyConnected": "WhatsApp ya está conectado; no se necesita un nuevo código QR.",
+    "qrWaiting": "Esperando a que Evolution API proporcione un código QR…",
     "states": { "open": "Conectado", "close": "Desconectado", "connecting": "Conectando", "unknown": "Desconocido", "unavailable": "No disponible" }
   },
   "prompt": {

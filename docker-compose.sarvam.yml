@@ -1,0 +1,14 @@
+# Temporary provider override for evaluating Sarvam chat quality.
+# Start with this file in addition to the normal Compose files; the base
+# Groq/Gemini configuration remains unchanged on disk.
+services:
+  core:
+    environment:
+      OPENAI_API_KEY: ${SARVAM_API_KEY:?Set SARVAM_API_KEY in the shell before starting this profile}
+      OPENAI_BASE_URL: https://api.sarvam.ai/v1
+      LLM_PROVIDER: openai
+      LLM_MODEL: sarvam-105b-conversations
+      STT_PROVIDER: sarvam
+      STT_API_KEY: ${SARVAM_API_KEY:?Set SARVAM_API_KEY in the shell before starting this profile}
+      STT_MODEL: saaras:v4
+      STT_LANGUAGE: unknown

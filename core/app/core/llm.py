@@ -39,6 +39,7 @@ def get_chat_model(
     init_kwargs: dict = {
         "model_provider": _PROVIDER_MAP.get(provider, provider),
         "temperature": settings.llm_temperature,
+        "max_tokens": settings.llm_max_tokens,
     }
 
     if provider == "google" and settings.google_api_key:
