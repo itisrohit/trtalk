@@ -35,6 +35,8 @@ export function useContacts(
     },
     placeholderData: keepPreviousData,
     refetchInterval: options?.poll ? INBOX_POLL_MS : undefined,
+    refetchIntervalInBackground: options?.poll ?? false,
+    refetchOnWindowFocus: options?.poll ?? true,
   })
 }
 
@@ -67,6 +69,8 @@ export function useContactMessages(
     },
     placeholderData: keepPreviousData,
     refetchInterval: options?.poll ? INBOX_POLL_MS : undefined,
+    refetchIntervalInBackground: options?.poll ?? false,
+    refetchOnWindowFocus: options?.poll ?? true,
   })
 }
 
