@@ -214,7 +214,7 @@ async def test_turn_context_small_faq_includes_all_and_hides_tool(session, fake_
     assert ctx.suppressed_tools == {"faq_search"}  # would only re-fetch the same
 
 
-async def test_turn_context_embedding_mode_keeps_tool_as_fallback(session, fake_embeddings):
+async def test_turn_context_embedding_mode_never_costs_a_second_call(session, fake_embeddings):
     from app.modules.faq import module
 
     await make_entries(session)
@@ -222,9 +222,19 @@ async def test_turn_context_embedding_mode_keeps_tool_as_fallback(session, fake_
 
     block = await module.turn_context(ctx, "opening hours")
     assert "Mon-Fri 9:00-18:00." in block
-    assert ctx.suppressed_tools == set()
+    assert ctx.suppressed_tools == {"faq_search"}
 
-    assert await module.turn_context(ctx, "unrelated topic") is None  # miss → tool retry
+    miss = await module.turn_context(ctx, "unrelated topic")
+    assert "No knowledge-base entry matches" in miss  # honest, and no tool retry
+
+
+async def test_turn_context_without_text_keeps_tool(session, fake_embeddings):
+    from app.modules.faq import module
+
+    await make_entries(session)
+    ctx = (await make_runtime(session)).context
+
+    assert await module.turn_context(ctx, "") is None  # e.g. uncaptioned photo
     assert ctx.suppressed_tools == set()
 
 

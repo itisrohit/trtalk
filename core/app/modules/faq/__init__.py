@@ -29,12 +29,21 @@ class FaqSearchConfig(BaseModel):
         title="Use embedding search",
         description="Use vector search for retrieval. Turn off for a small FAQ list to give the agent up to 50 entries for better nuanced answers.",
     )
-    top_k: int = Field(default=4, ge=1, le=20, description="Maximum number of results")
+    top_k: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="How many closest entries the agent sees each turn (it picks the relevant one)",
+    )
+    # A low floor, not a relevance gate: multilingual similarities cluster in
+    # ~0.6-0.8 and the right entry often scores just below a wrong one (e.g.
+    # Roman Punjabi vs English FAQs), so a high cutoff silently drops correct
+    # answers. Ranking + the model's judgement do the filtering instead.
     min_similarity: float = Field(
-        default=0.7,
+        default=0.5,
         ge=0.0,
         le=1.0,
-        description="Minimum cosine similarity for a result to count as relevant",
+        description="Similarity floor that only drops clearly unrelated entries (keep low, ~0.5)",
     )
 
 
@@ -133,10 +142,11 @@ class FaqModule:
     async def turn_context(self, ctx: TurnContext, query: str) -> str | None:
         """Pre-fetch FAQ entries into the prompt (no tool round trip).
 
-        Small-FAQ mode (no embeddings) puts the whole list in and hides the
-        tool — it could only return the same entries. Embedding mode searches
-        with the customer's own words and keeps the tool as a fallback, so the
-        model can retry with an English query when a romanized one misses.
+        Small-FAQ mode (no embeddings) puts the whole list in; embedding mode
+        puts in the top-k closest entries for the customer's own words. Either
+        way the tool is then hidden for the turn, so a weak match can never
+        cost a second LLM call. Only a turn without text (e.g. an uncaptioned
+        photo) keeps the tool, letting the model search from what it sees.
         """
         if not tool_enabled(ctx.config, "faq_search"):
             return None
@@ -144,10 +154,13 @@ class FaqModule:
         if config.use_embeddings and not query.strip():
             return None
         entries = await _retrieve(ctx, config, query)
-        if not config.use_embeddings:
-            ctx.suppressed_tools.add("faq_search")
+        ctx.suppressed_tools.add("faq_search")
         if not entries:
-            return None
+            return (
+                "<knowledge_base>\nNo knowledge-base entry matches this "
+                "message. Do not invent business details; say you don't have "
+                "that information or ask a clarifying question.\n</knowledge_base>"
+            )
         return (
             "<knowledge_base>\n"
             "Company knowledge-base entries for this turn (reference data, "
