@@ -41,7 +41,8 @@ WhatsApp channel you'll want a free Meta developer app
 [@BotFather](https://t.me/BotFather) token, ~2 minutes
 ([`docs/TELEGRAM-SETUP.md`](./docs/TELEGRAM-SETUP.md)); the web widget needs
 no account at all — one `<script>` tag
-([`docs/WEB-SETUP.md`](./docs/WEB-SETUP.md)).
+([`docs/WEB-SETUP.md`](./docs/WEB-SETUP.md)). In production, set up nightly
+database + media backups ([`docs/BACKUPS.md`](./docs/BACKUPS.md)).
 
 ```bash
 uvx trtalk new my-agent      # the wizard asks: LLM, embeddings, where's

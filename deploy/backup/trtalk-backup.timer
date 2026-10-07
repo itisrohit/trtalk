@@ -1,0 +1,12 @@
+[Unit]
+Description=Nightly TrTalk backup
+
+[Timer]
+# 21:30 UTC = 03:00 IST, the quietest hour for an Indian customer base.
+OnCalendar=*-*-* 21:30:00 UTC
+RandomizedDelaySec=10m
+# Run on next boot if the server was off at the scheduled time.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
