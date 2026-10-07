@@ -32,6 +32,17 @@ async def retrieve_relevant(
     if not query or not settings.google_api_key:
         return []
 
+    # Most first-time contacts have no saved memories. Avoid spending an
+    # external embedding request (and its network latency) when there is
+    # nothing to search. The indexed existence query is local and cheap.
+    existing = await session.exec(
+        select(Memory.id)
+        .where(Memory.contact_id == contact_id, Memory.embedding.is_not(None))
+        .limit(1)
+    )
+    if existing.first() is None:
+        return []
+
     try:
         from app.core.embeddings import get_embeddings
 

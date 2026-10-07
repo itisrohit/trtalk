@@ -10,5 +10,5 @@ services:
       LLM_MODEL: sarvam-105b-conversations
       STT_PROVIDER: sarvam
       STT_API_KEY: ${SARVAM_API_KEY:?Set SARVAM_API_KEY in the shell before starting this profile}
-      STT_MODEL: saaras:v4
+      STT_MODEL: saaras:v3
       STT_LANGUAGE: unknown

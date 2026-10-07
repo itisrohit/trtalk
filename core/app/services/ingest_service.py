@@ -24,7 +24,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
-from sqlmodel import select
+from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core import storage
@@ -191,6 +191,32 @@ async def handle_ingest(session: AsyncSession, request: IngestRequest) -> Ingest
 
     contact = await upsert_contact(session, request.channel, request.contact)
     conversation = await get_or_create_conversation(session, contact.id)
+
+    # Channel webhooks are at-least-once deliveries. A reconnect/history sync
+    # can replay an already accepted WhatsApp message, so never run the agent
+    # (or create a second reply) for the same channel message ID.
+    wamid = request.message.raw.get("wamid")
+    if isinstance(wamid, str) and wamid:
+        existing = await session.exec(
+            select(Message).where(
+                Message.conversation_id == conversation.id,
+                Message.direction == "in",
+                col(Message.meta)["wamid"].astext == wamid,
+            )
+        )
+        if existing.first() is not None:
+            logger.info("Ignoring duplicate inbound %s for conversation %s", wamid, conversation.id)
+            return IngestResponse(messages=[], conversation_id=conversation.id)
+
+    # Initial channel/history sync is useful in the inbox, but it must not
+    # trigger retrospective automated replies.
+    if request.suppress_reply:
+        inbound = await _persist_inbound(session, contact, conversation, request)
+        inbound.processed_at = _to_naive_utc(None)
+        conversation.updated_at = _to_naive_utc(None)
+        session.add(conversation)
+        await session.flush()
+        return IngestResponse(messages=[], conversation_id=conversation.id)
 
     if settings.inbound_debounce_seconds > 0:
         return await _schedule_coalesced(session, contact, conversation, request)

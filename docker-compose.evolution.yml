@@ -61,6 +61,8 @@ services:
       CORE_URL: http://core:8090
       INTERNAL_API_KEY: devkey
       WEBHOOK_SECRET: dev-webhook-secret
+      SUPPRESS_HISTORY_REPLIES: ${SUPPRESS_HISTORY_REPLIES:-true}
+      HISTORY_REPLAY_CLOCK_SKEW_SECONDS: ${HISTORY_REPLAY_CLOCK_SKEW_SECONDS:-10}
     ports:
       - "8001:8001"
 

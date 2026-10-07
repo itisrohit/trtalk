@@ -10,7 +10,7 @@ import base64
 import logging
 import re
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     internal_api_key: str = ""
     webhook_secret: str = ""
     allow_groups: bool = False
+    # WhatsApp replays history after a reconnect. Preserve it in the inbox but
+    # do not let old messages create fresh automated replies.
+    suppress_history_replies: bool = True
+    history_replay_clock_skew_seconds: int = 10
     http_timeout_seconds: float = 30.0
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
@@ -35,6 +39,10 @@ class Settings(BaseSettings):
 
 settings = Settings()
 app = FastAPI(title="Agproto Evolution Gateway", version="0.1.0")
+# Messages timestamped before this adapter was online are history/replay
+# traffic, not a new live customer request. A small skew avoids suppressing a
+# message sent at the exact moment the container starts.
+GATEWAY_STARTED_AT = datetime.now(timezone.utc)
 
 
 def _data(payload: dict[str, Any]) -> dict[str, Any]:
@@ -68,6 +76,30 @@ def _nested_media(message: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
         if kind in {"audioMessage", "imageMessage", "documentMessage", "stickerMessage", "videoMessage"} and isinstance(value, dict):
             return kind.removesuffix("Message"), value
     return None
+
+
+def _message_time(data: dict[str, Any]) -> datetime | None:
+    """Parse Evolution's Unix message timestamp to an aware UTC datetime."""
+    try:
+        timestamp = data.get("messageTimestamp")
+        return datetime.fromtimestamp(float(timestamp), tz=timezone.utc) if timestamp else None
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _is_history_replay(data: dict[str, Any]) -> bool:
+    """True for a sync/reconnect replay that predates this gateway process."""
+    if not settings.suppress_history_replies:
+        return False
+    message_time = _message_time(data)
+    if message_time is None:
+        # Missing timestamps are treated as live rather than risking a dropped
+        # new customer message.
+        return False
+    cutoff = GATEWAY_STARTED_AT - timedelta(
+        seconds=max(settings.history_replay_clock_skew_seconds, 0)
+    )
+    return message_time < cutoff
 
 
 def _media_uri(message: dict[str, Any], media: dict[str, Any]) -> str | None:
@@ -139,11 +171,9 @@ def canonical_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
                 mtype = "image"
                 media_url = first_frame
 
-    timestamp = data.get("messageTimestamp")
-    try:
-        received = datetime.fromtimestamp(float(timestamp), tz=timezone.utc).isoformat() if timestamp else datetime.now(timezone.utc).isoformat()
-    except (TypeError, ValueError, OverflowError):
-        received = datetime.now(timezone.utc).isoformat()
+    message_time = _message_time(data)
+    history_replay = _is_history_replay(data)
+    received = (message_time or datetime.now(timezone.utc)).isoformat()
 
     return {
         "channel": "whatsapp",
@@ -157,9 +187,14 @@ def canonical_payload(payload: dict[str, Any]) -> dict[str, Any] | None:
             "type": mtype,
             "text": text,
             "media_url": media_url,
-            "raw": {"wamid": key.get("id"), "source": "evolution-api"},
+            "raw": {
+                "wamid": key.get("id"),
+                "source": "evolution-api",
+                "history_replay": history_replay,
+            },
         },
         "received_at": received,
+        "suppress_reply": history_replay,
     }
 
 

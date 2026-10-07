@@ -39,6 +39,15 @@ class Settings(BaseSettings):
     # drifting into Roman Punjabi when older context contains Punjabi.
     llm_temperature: float = 0.0
     llm_max_tokens: int = 700
+    # Customer-support replies are normally short and should not spend time on
+    # hidden reasoning. Set a positive budget to opt back in for a deployment
+    # that needs more deliberate tool routing.
+    llm_thinking_budget: int | None = 0
+    # OpenAI-compatible reasoning models (Groq Qwen/gpt-oss) take a
+    # `reasoning_effort` instead. "none" disables Qwen's hidden reasoning — the
+    # lowest-latency setting, and it keeps <think> blocks out of the reply.
+    # Empty = provider default.
+    llm_reasoning_effort: str | None = None
     google_api_key: str | None = None
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None
@@ -50,6 +59,15 @@ class Settings(BaseSettings):
     sarvam_lid_enabled: bool = True
     sarvam_lid_timeout_seconds: float = 3.0
     openrouter_api_key: str | None = None
+    # Per-language chat route. Text turns whose reply language is locked to
+    # one of LLM_ALT_LANGUAGES (e.g. "pa-IN") go to a second OpenAI-compatible
+    # model — Sarvam writes far better Punjabi than general models. Media turns
+    # stay on the primary (vision). Empty = disabled. On failure the turn is
+    # retried once on the primary model.
+    llm_alt_languages: str = ""  # comma-separated BCP-47 codes
+    llm_alt_model: str | None = None  # e.g. sarvam-105b-conversations
+    llm_alt_base_url: str | None = None  # e.g. https://api.sarvam.ai/v1
+    llm_alt_api_key: str | None = None  # empty → SARVAM_API_KEY
     ollama_base_url: str | None = None  # default http://localhost:11434
 
     # Conversation history window fed to the agent each turn
@@ -69,14 +87,11 @@ class Settings(BaseSettings):
     llm_supports_vision: bool | None = None
     llm_supports_audio: bool | None = None
 
-    # Speech-to-text fallback (ADR-010). Transcribe an inbound voice note to
-    # text BEFORE the turn when the LLM lacks native audio (caps.audio False)
-    # — so any model can answer it. Empty provider = DISABLED → the existing
-    # graceful "ask for text" degradation, unchanged. OpenAI-compatible API;
-    # Groq's whisper-large-v3-turbo is the default (native OGG/Opus → no
-    # transcoding, cheapest). The credential is SEPARATE from the LLM key on
-    # purpose: the whole point is that the LLM provider isn't the audio one.
-    stt_provider: str = ""  # "" disabled | "groq" | "openai" | "<compatible>"
+    # Speech-to-text (ADR-010). When enabled, transcribe every inbound voice
+    # note BEFORE the chat turn. This makes the newest spoken text authoritative
+    # for reply-language selection, rather than letting an older conversation
+    # language influence the response. Empty provider = disabled.
+    stt_provider: str = ""  # "" disabled | "gemini" | "groq" | "openai" | "<compatible>"
     stt_base_url: str | None = None  # default derived from provider when empty
     stt_model: str = "whisper-large-v3-turbo"
     stt_api_key: str | None = None  # required when enabled; not the LLM key
@@ -147,8 +162,17 @@ class Settings(BaseSettings):
         return bool(self.smtp_host and self.smtp_from and self.notify_email_to)
 
     @property
+    def llm_alt_language_set(self) -> set[str]:
+        """Languages routed to the alternate chat model (empty = disabled)."""
+        if not (self.llm_alt_model and self.llm_alt_base_url):
+            return set()
+        return {c.strip() for c in self.llm_alt_languages.split(",") if c.strip()}
+
+    @property
     def stt_configured(self) -> bool:
-        """STT is usable only with both a provider and its key set (ADR-010)."""
+        """Whether the configured STT provider has usable credentials."""
+        if self.stt_provider == "gemini":
+            return bool(self.google_api_key)
         return bool(self.stt_provider and self.stt_api_key)
 
     @property

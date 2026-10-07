@@ -157,7 +157,7 @@ async def test_faq_search_tool_returns_grounded_snippets(session, fake_embedding
     result = await faq_search.coroutine(query="opening hours", runtime=runtime)
 
     assert "Mon-Fri 9:00-18:00." in result
-    assert "ONLY" in result  # grounding instruction
+    assert "Use them only if they directly answer" in result  # grounding instruction
 
 
 async def test_faq_search_tool_is_honest_on_miss(session, fake_embeddings):
@@ -190,8 +190,52 @@ async def test_faq_search_fast_context_mode_skips_embeddings(session, fake_embed
     result = await faq_search.coroutine(query="a nuanced question", runtime=runtime)
 
     assert "Mon-Fri 9:00-18:00." in result
-    assert "Refunds are available within 30 days." in result
+    assert "30 days with receipt." in result
     assert len(fake_embeddings.query_calls) == query_calls_before
+
+
+# ---------------------------------------------------------------------------
+# turn_context hook — FAQ pre-fetched into the prompt (no tool round trip)
+# ---------------------------------------------------------------------------
+
+
+async def test_turn_context_small_faq_includes_all_and_hides_tool(session, fake_embeddings):
+    from app.modules.faq import module
+
+    await make_entries(session)
+    runtime = await make_runtime(session, tool_config={"faq_search": {"use_embeddings": False}})
+    ctx = runtime.context
+
+    block = await module.turn_context(ctx, "ਤੁਹਾਡੇ ਕੋਲ ਕਿਹੜੀਆਂ ਕਿਤਾਬਾਂ ਹਨ?")
+
+    assert block.startswith("<knowledge_base>")
+    assert "Mon-Fri 9:00-18:00." in block and "30 days with receipt." in block
+    assert "translate the facts into the customer's language" in block
+    assert ctx.suppressed_tools == {"faq_search"}  # would only re-fetch the same
+
+
+async def test_turn_context_embedding_mode_keeps_tool_as_fallback(session, fake_embeddings):
+    from app.modules.faq import module
+
+    await make_entries(session)
+    ctx = (await make_runtime(session)).context
+
+    block = await module.turn_context(ctx, "opening hours")
+    assert "Mon-Fri 9:00-18:00." in block
+    assert ctx.suppressed_tools == set()
+
+    assert await module.turn_context(ctx, "unrelated topic") is None  # miss → tool retry
+    assert ctx.suppressed_tools == set()
+
+
+async def test_turn_context_respects_disabled_tool(session, fake_embeddings):
+    from app.modules.faq import module
+
+    await make_entries(session)
+    ctx = (await make_runtime(session)).context
+    ctx.config.enabled_tools = {"faq_search": False}
+
+    assert await module.turn_context(ctx, "opening hours") is None
 
 
 # ---------------------------------------------------------------------------
