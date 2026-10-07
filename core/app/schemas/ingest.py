@@ -36,6 +36,9 @@ class IngestRequest(BaseModel):
     contact: ContactPayload
     message: InboundMessage
     received_at: datetime | None = None
+    # Gateways may import history during an initial channel sync. Store those
+    # messages for the operator, but never treat them as new bot work.
+    suppress_reply: bool = False
 
 
 class OutboundMessage(BaseModel):

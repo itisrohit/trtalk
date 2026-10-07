@@ -103,7 +103,17 @@ async def test_ingest_takes_a_per_identity_advisory_lock(client, session):
 
 async def test_ingest_contact_upsert_is_idempotent(client, session):
     r1 = await client.post("/ingest", json=canonical_payload())
-    r2 = await client.post("/ingest", json=canonical_payload())
+    r2 = await client.post(
+        "/ingest",
+        json=canonical_payload(
+            message={
+                "type": "text",
+                "text": "¿Abren los domingos?",
+                "media_url": None,
+                "raw": {"wamid": "wamid.test124"},
+            }
+        ),
+    )
     assert r1.status_code == r2.status_code == 200
 
     # Same contact + same single conversation thread reused
@@ -115,6 +125,29 @@ async def test_ingest_contact_upsert_is_idempotent(client, session):
     assert len(contacts) == 1
     assert len(conversations) == 1
     assert len(messages) == 4  # 2 turns × (in + out)
+
+
+async def test_ingest_deduplicates_a_replayed_channel_message(client, session):
+    first = await client.post("/ingest", json=canonical_payload())
+    replay = await client.post("/ingest", json=canonical_payload())
+
+    assert first.status_code == replay.status_code == 200
+    assert replay.json()["messages"] == []
+    messages = (await session.exec(select(Message))).all()
+    assert len(messages) == 2  # exactly one inbound + one bot reply
+
+
+async def test_history_sync_message_is_saved_without_a_bot_reply(client, session):
+    response = await client.post(
+        "/ingest", json=canonical_payload(suppress_reply=True)
+    )
+
+    assert response.status_code == 200
+    assert response.json()["messages"] == []
+    messages = (await session.exec(select(Message))).all()
+    assert len(messages) == 1
+    assert messages[0].direction == "in"
+    assert messages[0].processed_at is not None
 
 
 async def test_bsuid_stored_as_identity_wa_id_nullable(client, session):
