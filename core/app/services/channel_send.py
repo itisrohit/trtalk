@@ -102,3 +102,57 @@ async def send_message(
     if response.status_code >= 400:
         raise _error_from_response(response)
     return response.json()
+
+
+# ---------------------------------------------------------------------------
+# Connection control (pairing / status / logout) — admin → core → gateway.
+# Same seam and credentials as /send: the gateway serves `<base>/admin/
+# connection[/<action>]` next to its `/send`, so no extra .env var. Keeps a
+# channel's provider credentials (e.g. an Evolution API key) server-side.
+# ---------------------------------------------------------------------------
+
+CONNECTION_ACTIONS = {"connect", "restart", "logout"}
+
+
+def _gateway_base(channel: str) -> str:
+    url = send_url_for(channel)
+    if not url:
+        raise ChannelSendError(
+            "CHANNEL_NOT_CONFIGURED",
+            f"No gateway configured for channel '{channel}' "
+            f"(set CHANNEL_{channel.upper()}_SEND_URL)",
+        )
+    return url.removesuffix("/send")
+
+
+async def connection(channel: str, action: str | None = None) -> dict:
+    """Read (`action=None`) or change a channel's connection via its gateway.
+
+    Returns the gateway's `{"state": ..., "qr": ...}`; raises ChannelSendError.
+    A gateway without connection control answers 404 → `NOT_SUPPORTED`.
+    """
+    url = f"{_gateway_base(channel)}/admin/connection"
+    if action:
+        url = f"{url}/{action}"
+    headers = (
+        {"X-Internal-API-Key": settings.internal_api_key}
+        if settings.internal_api_key
+        else {}
+    )
+    try:
+        async with httpx.AsyncClient(timeout=SEND_TIMEOUT_SECONDS) as client:
+            response = await client.request(
+                "POST" if action else "GET", url, headers=headers
+            )
+    except httpx.HTTPError as exc:
+        logger.error("Gateway unreachable for channel '%s': %s", channel, exc)
+        raise ChannelSendError(
+            "GATEWAY_UNREACHABLE", f"Could not reach the {channel} gateway"
+        ) from exc
+    if response.status_code == 404:
+        raise ChannelSendError(
+            "NOT_SUPPORTED", f"The {channel} gateway has no connection control"
+        )
+    if response.status_code >= 400:
+        raise _error_from_response(response)
+    return response.json()

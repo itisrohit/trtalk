@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from app.controllers import base, conversations, ingest
 from app.controllers.admin import (
     auth_router,
+    channels_router,
     config_router,
     contacts_router,
     media_router,
@@ -112,6 +113,9 @@ admin_router.include_router(
     contacts_router, prefix="/contacts", tags=["admin-contacts"]
 )
 admin_router.include_router(media_router, prefix="/media", tags=["admin-media"])
+admin_router.include_router(
+    channels_router, prefix="/channels", tags=["admin-channels"]
+)
 app.include_router(admin_router)
 
 # Module admin routes — every module's register_admin_routes() mounts under

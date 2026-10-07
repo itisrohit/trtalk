@@ -268,6 +268,63 @@ async def send(payload: dict[str, Any], x_internal_api_key: str | None = Header(
     return await _evolution_send(number, payload.get("message") or {})
 
 
+# ---------------------------------------------------------------------------
+# Connection control — the admin panel reaches these through the core
+# (`/admin/channels/whatsapp/connection…`, admin JWT), never directly: the
+# Evolution API key stays server-side instead of shipping in the browser bundle.
+# Responses use a channel-neutral shape: {"state": ..., "qr": <data URI|null>}.
+# ---------------------------------------------------------------------------
+
+
+def _require_internal_key(key: str | None) -> None:
+    if settings.internal_api_key and key != settings.internal_api_key:
+        raise HTTPException(401, "Invalid internal API key")
+
+
+async def _evolution_instance(method: str, action: str) -> dict[str, Any]:
+    url = f"{settings.evolution_url.rstrip('/')}/instance/{action}/{settings.evolution_instance}"
+    async with httpx.AsyncClient(timeout=settings.http_timeout_seconds) as client:
+        response = await client.request(method, url, headers={"apikey": settings.evolution_api_key})
+    if response.status_code >= 400:
+        raise HTTPException(502, f"Evolution API returned {response.status_code}")
+    return response.json() if response.content else {}
+
+
+def _state(body: dict[str, Any]) -> str:
+    instance = body.get("instance")
+    if not isinstance(instance, dict):
+        return "unknown"
+    return instance.get("state") or "unknown"
+
+
+@app.get("/admin/connection")
+async def connection_state(x_internal_api_key: str | None = Header(default=None)):
+    _require_internal_key(x_internal_api_key)
+    return {"state": _state(await _evolution_instance("GET", "connectionState")), "qr": None}
+
+
+@app.post("/admin/connection/connect")
+async def connection_connect(x_internal_api_key: str | None = Header(default=None)):
+    """Start pairing: returns a QR (data URI) to scan, or state "open" if paired."""
+    _require_internal_key(x_internal_api_key)
+    body = await _evolution_instance("GET", "connect")
+    return {"state": _state(body), "qr": body.get("base64") or None}
+
+
+@app.post("/admin/connection/restart")
+async def connection_restart(x_internal_api_key: str | None = Header(default=None)):
+    _require_internal_key(x_internal_api_key)
+    await _evolution_instance("POST", "restart")
+    return {"state": "connecting", "qr": None}
+
+
+@app.post("/admin/connection/logout")
+async def connection_logout(x_internal_api_key: str | None = Header(default=None)):
+    _require_internal_key(x_internal_api_key)
+    await _evolution_instance("POST", "logout")
+    return {"state": "close", "qr": None}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "agproto-evolution-gateway"}

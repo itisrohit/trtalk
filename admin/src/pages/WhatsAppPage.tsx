@@ -4,23 +4,21 @@ import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { apiClient } from "@/lib/api-client"
 
-const evolutionUrl = import.meta.env.VITE_EVOLUTION_API_URL || "http://localhost:8080"
-const evolutionApiKey = import.meta.env.VITE_EVOLUTION_API_KEY || "dev-evolution-key"
-const instanceName = "agproto"
+// The core forwards these to the WhatsApp gateway (admin JWT required), so
+// the provider's credentials never ship in this bundle.
+type Connection = { state: string; qr: string | null }
+type ConnectionAction = "connect" | "restart" | "logout"
 
-type ConnectionResponse = { instance?: { state?: string } }
-type ConnectResponse = {
-  base64?: string | null
-  instance?: { state?: string }
+const CONNECTION_PATH = "/admin/channels/whatsapp/connection"
+
+async function getConnection(): Promise<Connection> {
+  return (await apiClient.get<Connection>(CONNECTION_PATH)).data
 }
 
-async function evolutionFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${evolutionUrl}${path}`, {
-    headers: { apikey: evolutionApiKey },
-  })
-  if (!response.ok) throw new Error(`Evolution API returned ${response.status}`)
-  return response.json() as Promise<T>
+async function changeConnection(action: ConnectionAction): Promise<Connection> {
+  return (await apiClient.post<Connection>(`${CONNECTION_PATH}/${action}`)).data
 }
 
 export function WhatsAppPage() {
@@ -35,9 +33,9 @@ export function WhatsAppPage() {
 
   const refreshState = useCallback(async () => {
     try {
-      const result = await evolutionFetch<ConnectionResponse>(`/instance/connectionState/${instanceName}`)
-      setState(result.instance?.state ?? "unknown")
-      if (result.instance?.state === "open") {
+      const result = await getConnection()
+      setState(result.state)
+      if (result.state === "open") {
         setQr(null)
         setNotice(null)
       }
@@ -50,12 +48,12 @@ export function WhatsAppPage() {
     setLoading(true)
     setError(null)
     try {
-      const result = await evolutionFetch<ConnectResponse>(`/instance/connect/${instanceName}`)
-      setQr(result.base64 ?? null)
-      if (!result.base64 && result.instance?.state === "open") {
+      const result = await changeConnection("connect")
+      setQr(result.qr)
+      if (!result.qr && result.state === "open") {
         setState("open")
         setNotice(t("whatsapp.alreadyConnected"))
-      } else if (!result.base64) {
+      } else if (!result.qr) {
         setNotice(t("whatsapp.qrWaiting"))
       } else {
         setNotice(null)
@@ -74,11 +72,7 @@ export function WhatsAppPage() {
     setError(null)
     setNotice(null)
     try {
-      const response = await fetch(`${evolutionUrl}/instance/restart/${instanceName}`, {
-        method: "POST",
-        headers: { apikey: evolutionApiKey },
-      })
-      if (!response.ok) throw new Error(`Evolution API returned ${response.status}`)
+      await changeConnection("restart")
       setState("connecting")
       setQr(null)
       setNotice(t("whatsapp.retryHistoryStarted"))
@@ -95,11 +89,7 @@ export function WhatsAppPage() {
     setError(null)
     setNotice(null)
     try {
-      const response = await fetch(`${evolutionUrl}/instance/logout/${instanceName}`, {
-        method: "POST",
-        headers: { apikey: evolutionApiKey },
-      })
-      if (!response.ok) throw new Error(`Evolution API returned ${response.status}`)
+      await changeConnection("logout")
       setState("close")
       setQr(null)
       setNotice(t("whatsapp.disconnected"))

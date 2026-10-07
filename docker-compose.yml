@@ -114,8 +114,6 @@ services:
       context: ./admin
       args:
         VITE_API_BASE_URL: "http://localhost:8090"
-        VITE_EVOLUTION_API_URL: "http://localhost:8080"
-        VITE_EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-dev-evolution-key}
     depends_on:
       - core
     ports:

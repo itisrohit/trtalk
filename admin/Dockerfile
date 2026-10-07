@@ -18,10 +18,6 @@ COPY . .
 # Build argument para la URL del API
 ARG VITE_API_BASE_URL=https://api.example.com
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ARG VITE_EVOLUTION_API_URL=http://localhost:8080
-ENV VITE_EVOLUTION_API_URL=$VITE_EVOLUTION_API_URL
-ARG VITE_EVOLUTION_API_KEY=dev-evolution-key
-ENV VITE_EVOLUTION_API_KEY=$VITE_EVOLUTION_API_KEY
 
 # Construir la aplicación para producción
 RUN npm run build
