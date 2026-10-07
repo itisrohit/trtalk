@@ -6,7 +6,7 @@ agent config (enabled tools / per-module settings).
 """
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -21,3 +21,6 @@ class TurnContext:
     contact_id: uuid.UUID
     conversation_id: uuid.UUID
     config: AgentConfig
+    # Tools whose result a module already put in the prompt this turn (the
+    # turn_context hook) — hidden from the model so it can't re-fetch it.
+    suppressed_tools: set[str] = field(default_factory=set)

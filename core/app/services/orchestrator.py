@@ -108,6 +108,7 @@ def _system_message(
     caps: ModelCapabilities,
     history_context: str | None = None,
     language_preference: language_id.LanguagePreference | None = None,
+    references: list[str] | None = None,
 ) -> SystemMessage:
     parts = [config.system_prompt]
     attachments = _attachments_line(caps)
@@ -123,28 +124,51 @@ def _system_message(
         )
     if history_context:
         parts.append(history_context)
+    parts.extend(references or [])  # module turn_context blocks (e.g. FAQ)
     # Keep the turn-specific instruction inside the *first* system message.
     # Some OpenAI-compatible providers are less reliable with several system
     # messages interleaved with chat history.
     parts.append(_current_turn_language_guard().content)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    parts.append(f"Fecha y hora actual: {now}")
+    parts.append(f"Current date and time: {now}")
     if language_preference:
+        # Plain, final instruction. No vendor names or detection details: a
+        # model told *how* the language was detected starts debating it
+        # (e.g. "the transcript is Gurmukhi but the lock says Latin…") and
+        # that deliberation leaks into the reply.
         parts.append(
-            "DETERMINISTIC LANGUAGE LOCK FOR THIS TURN: Sarvam Language "
-            f"Identification detected {language_preference.language_code} / "
-            f"{language_preference.script_code} from the newest customer text. "
-            f"{language_preference.instruction} This overrides language patterns "
-            "in conversation history."
+            "REPLY LANGUAGE FOR THIS TURN (already decided; follow it silently "
+            f"and never mention it): {language_preference.instruction} This "
+            "overrides the language of the conversation history and of any "
+            "transcript or reference text."
         )
     return SystemMessage("\n\n".join(parts))
 
 
 async def _language_preference(
-    conversation: Conversation, text: str | None
+    conversation: Conversation,
+    text: str | None,
+    *,
+    voice: bool = False,
+    spoken_language: str | None = None,
 ) -> language_id.LanguagePreference | None:
-    """Classify the newest meaningful text or reuse its saved preference."""
-    detected = await language_id.identify(text)
+    """Classify the newest meaningful text or reuse its saved preference.
+
+    `voice`: the text is a voice-note transcript. Keep the detected language
+    but always answer in Latin script — a spoken message carries no script
+    choice, and Roman is what WhatsApp users read most easily. Detection runs
+    on the STT's native-script output, which classifies far more reliably
+    than romanized text.
+
+    `spoken_language`: the language the STT heard in the audio (Sarvam). It
+    is authoritative for a voice note, so the LID call is skipped entirely.
+    """
+    if voice and spoken_language:
+        detected = language_id.LanguagePreference(spoken_language, "Latn")
+    else:
+        detected = await language_id.identify(text)
+    if detected and voice:
+        detected = language_id.LanguagePreference(detected.language_code, "Latn")
     if detected:
         conversation.conversation_state = {
             **conversation.conversation_state,
@@ -157,6 +181,8 @@ async def _language_preference(
     saved = conversation.conversation_state.get("language_preference") or {}
     language = saved.get("language_code")
     script = saved.get("script_code")
+    if voice:  # LID unavailable: the Roman-script rule still applies
+        return language_id.LanguagePreference(language or "und", "Latn")
     if language and script:
         return language_id.LanguagePreference(language, script)
     return None
@@ -278,6 +304,17 @@ def _current_message(inbound: InboundMessage, caps: ModelCapabilities) -> HumanM
         )
 
     if inbound.type == "audio":
+        if inbound.text:
+            # A configured STT provider has already converted this exact voice
+            # note into text. Make that transcript authoritative even when the
+            # chat model also accepts native audio: it keeps language matching
+            # tied to the newest spoken message and avoids a second audio parse.
+            return HumanMessage(
+                f'The user sent a voice message. Transcript: "{inbound.text}". '
+                "The transcript's alphabet comes from the speech-to-text tool, "
+                "not from the user. Answer what they said (do not repeat or "
+                "transliterate it) and do NOT say you transcribed it."
+            )
         if caps.audio and media:
             mime, b64 = media
             # Same media-first ordering as the image branch (see above).
@@ -292,14 +329,6 @@ def _current_message(inbound: InboundMessage, caps: ModelCapabilities) -> HumanM
                         ),
                     },
                 ]
-            )
-        if inbound.text:
-            # STT transcribed it upstream (ADR-010), or a rare audio caption.
-            # Render it as a voice-message turn — no audio block, the model
-            # can't take one; the transcript IS the content.
-            return HumanMessage(
-                f'The user sent a voice message. Transcript: "{inbound.text}". '
-                "Respond to its content naturally. Do NOT say you transcribed it."
             )
         logger.warning(
             "Audio received but model '%s:%s' lacks audio input (or no media data) — text fallback",
@@ -376,52 +405,111 @@ def _capabilities() -> ModelCapabilities:
 
 async def _transcribe_if_needed(
     inbound: InboundMessage, caps: ModelCapabilities
-) -> InboundMessage:
+) -> tuple[InboundMessage, str | None]:
     """STT pre-pass (ADR-010): set `inbound.text` from the audio transcript.
 
-    Runs only for an audio message when the LLM lacks native audio and STT is
-    configured; otherwise (and on any STT failure) returns the inbound
+    Runs when the LLM lacks native audio, or whenever STT is explicitly
+    configured. On any STT failure it returns the inbound
     unchanged, so `_current_message` keeps its graceful text fallback. Never
-    raises — STT must not break a turn.
+    raises — STT must not break a turn. Also returns the spoken language when
+    the STT provider detected it (Sarvam), else None.
     """
-    if inbound.type != "audio" or caps.audio or not transcription.stt_enabled():
-        return inbound
+    if (
+        inbound.type != "audio"
+        or not transcription.stt_enabled()
+        or (caps.audio and not transcription.should_transcribe_native_audio())
+    ):
+        return inbound, None
     if not inbound.media_url or not inbound.media_url.startswith("data:"):
-        return inbound
+        return inbound, None
     try:
         mime, audio = storage.parse_data_uri(inbound.media_url)
     except ValueError:
-        return inbound
+        return inbound, None
     transcript = await transcription.transcribe(audio, mime)
     if not transcript:
-        return inbound
-    logger.info("STT transcribed inbound audio (%d chars)", len(transcript))
-    return inbound.model_copy(update={"text": transcript})
+        return inbound, None
+    spoken = getattr(transcript, "language_code", None)
+    logger.info("STT transcribed inbound audio (%d chars, %s)", len(transcript), spoken)
+    return inbound.model_copy(update={"text": str(transcript)}), spoken
 
 
-async def _invoke(
-    session: AsyncSession,
-    conversation: Conversation,
-    config: AgentConfig,
-    messages: list,
-    model: BaseChatModel | None,
-) -> list[OutboundMessage]:
-    """Run the assembled message list through the agent → canonical reply."""
-    agent = _build_agent(model) if model is not None else _get_agent()
-    context = TurnContext(
+def _turn_context(
+    session: AsyncSession, conversation: Conversation, config: AgentConfig
+) -> TurnContext:
+    return TurnContext(
         session=session,
         contact_id=conversation.contact_id,
         conversation_id=conversation.id,
         config=config,
     )
+
+
+def _route_model(
+    model: BaseChatModel | None,
+    language_preference: language_id.LanguagePreference | None,
+) -> BaseChatModel | None:
+    """Text turns locked to an LLM_ALT_LANGUAGES language → alternate model."""
+    if (
+        model is None
+        and language_preference
+        and language_preference.language_code in settings.llm_alt_language_set
+    ):
+        from app.core import llm
+
+        return llm.get_alt_chat_model()
+    return model
+
+
+async def _invoke(
+    conversation: Conversation,
+    context: TurnContext,
+    messages: list,
+    model: BaseChatModel | None,
+    *,
+    retry_on_primary: bool = False,
+) -> list[OutboundMessage]:
+    """Run the assembled message list through the agent → canonical reply.
+
+    `retry_on_primary`: `model` is the per-language alternate; if it fails,
+    run the turn once more on the primary model before giving up.
+    """
+    agent = _build_agent(model) if model is not None else _get_agent()
     try:
         result = await agent.ainvoke({"messages": messages}, context=context)
         reply = _extract_text(result["messages"][-1]).strip()
     except Exception:
+        if retry_on_primary:
+            logger.warning(
+                "Alternate model failed for conversation %s; retrying on primary",
+                conversation.id,
+                exc_info=True,
+            )
+            return await _invoke(conversation, context, messages, None)
         logger.exception("Agent turn failed for conversation %s", conversation.id)
         reply = settings.fallback_reply
 
     return [OutboundMessage(type="text", text=reply or settings.fallback_reply)]
+
+
+async def _enforce_script(
+    replies: list[OutboundMessage],
+    language_preference: language_id.LanguagePreference | None,
+) -> list[OutboundMessage]:
+    """Guarantee a Latin-script lock: romanize any reply that slipped.
+
+    No-op unless the lock is Latin AND the reply contains Indic script (the
+    model copied a native-script transcript, say) — then one transliteration
+    call fixes the script deterministically instead of re-asking the model.
+    """
+    if not language_preference or language_preference.script_code != "Latn":
+        return replies
+    for reply in replies:
+        if reply.text and language_id.has_indic_script(reply.text):
+            reply.text = await language_id.romanize(
+                reply.text, language_preference.language_code
+            )
+    return replies
 
 
 async def run_turn(
@@ -437,8 +525,10 @@ async def run_turn(
     """
     config = await agent_config_service.get_config(session)
     caps = _capabilities()
-    inbound = await _transcribe_if_needed(inbound, caps)
-    language_preference = await _language_preference(conversation, inbound.text)
+    inbound, spoken = await _transcribe_if_needed(inbound, caps)
+    language_preference = await _language_preference(
+        conversation, inbound.text, voice=inbound.type == "audio", spoken_language=spoken
+    )
     memories = await memory_service.retrieve_relevant(
         session, conversation.contact_id, inbound.text or ""
     )
@@ -446,15 +536,23 @@ async def run_turn(
     history_context = await _history_context(
         session, conversation.id, settings.history_limit
     )
+    context = _turn_context(session, conversation, config)
+    references = await registry.gather_turn_context(context, inbound.text or "")
     messages = [
-        _system_message(config, memories, caps, history_context, language_preference),
+        _system_message(
+            config, memories, caps, history_context, language_preference, references
+        ),
         current,
     ]
     if model is None and _has_media_blocks(current):
         from app.core import llm
 
         model = llm.get_media_chat_model()
-    return await _invoke(session, conversation, config, messages, model)
+    routed = _route_model(model, language_preference)
+    replies = await _invoke(
+        conversation, context, messages, routed, retry_on_primary=routed is not model
+    )
+    return await _enforce_script(replies, language_preference)
 
 
 async def _message_to_inbound(message: Message) -> InboundMessage:
@@ -500,30 +598,43 @@ async def run_coalesced_turn(
     current = []
     transcribed_inputs = []
     for m in batch:
-        inbound = await _transcribe_if_needed(await _message_to_inbound(m), caps)
-        transcribed_inputs.append(inbound)
+        inbound, spoken = await _transcribe_if_needed(await _message_to_inbound(m), caps)
+        transcribed_inputs.append((inbound, spoken))
         current.append(_current_message(inbound, caps))
     # Use the post-STT text here. Audio rows intentionally have text=NULL in
     # the database, so reading batch rows directly would reuse the previous
     # conversation language (for example Punjabi) for a new English voice
     # note.
-    query = "\n".join(item.text for item in transcribed_inputs if item.text)
+    query = "\n".join(item.text for item, _ in transcribed_inputs if item.text)
     memories = await memory_service.retrieve_relevant(
         session, conversation.contact_id, query
     )
-    latest_text = next(
-        (item.text for item in reversed(transcribed_inputs) if item.text), None
+    latest, spoken = next(
+        (pair for pair in reversed(transcribed_inputs) if pair[0].text), (None, None)
     )
-    language_preference = await _language_preference(conversation, latest_text)
+    language_preference = await _language_preference(
+        conversation,
+        latest.text if latest else None,
+        voice=latest is not None and latest.type == "audio",
+        spoken_language=spoken,
+    )
     history_context = await _history_context(
         session, conversation.id, settings.history_limit, exclude_pending=True
     )
+    context = _turn_context(session, conversation, config)
+    references = await registry.gather_turn_context(context, query)
     messages = [
-        _system_message(config, memories, caps, history_context, language_preference),
+        _system_message(
+            config, memories, caps, history_context, language_preference, references
+        ),
         *current,
     ]
     if model is None and any(_has_media_blocks(c) for c in current):
         from app.core import llm
 
         model = llm.get_media_chat_model()
-    return await _invoke(session, conversation, config, messages, model)
+    routed = _route_model(model, language_preference)
+    replies = await _invoke(
+        conversation, context, messages, routed, retry_on_primary=routed is not model
+    )
+    return await _enforce_script(replies, language_preference)

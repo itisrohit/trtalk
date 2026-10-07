@@ -281,12 +281,11 @@ async def test_history_excludes_pending_inbound(session):
     session.add_all([processed, out, pending])
     await session.commit()
 
-    history = await orchestrator._history_messages(
+    history = await orchestrator._history_context(
         session, conv.id, 50, exclude_pending=True
     )
-    texts = [m.content for m in history]
-    assert "vieja" in texts and "respondida" in texts
-    assert "ACTUAL" not in texts  # the pending batch is the input, not history
+    assert "Customer: vieja" in history and "Assistant: respondida" in history
+    assert "ACTUAL" not in history  # the pending batch is the input, not history
 
 
 async def _noop():

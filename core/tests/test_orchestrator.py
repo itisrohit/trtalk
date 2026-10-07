@@ -16,7 +16,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from pydantic import Field
 
-from app.models import Contact, Conversation, Memory, Message
+from app.models import AgentConfig, Contact, Conversation, Memory, Message
 from app.modules import registry
 from app.schemas.ingest import InboundMessage
 from app.services import agent_config_service, language_id, orchestrator
@@ -107,9 +107,74 @@ def test_language_lock_for_roman_hinglish_is_explicit():
     system = orchestrator._system_message(
         AgentConfig(), [], orchestrator._capabilities(), language_preference=preference
     )
-    assert "DETERMINISTIC LANGUAGE LOCK" in system.content
+    assert "REPLY LANGUAGE FOR THIS TURN" in system.content
+    assert "Sarvam" not in system.content  # no detection details to debate
     assert "Roman Hindi/Hinglish" in system.content
     assert "Do not reply in Punjabi" in system.content
+
+
+async def test_voice_note_keeps_language_but_forces_roman_script(session, monkeypatch):
+    conversation = await make_conversation(session)
+
+    async def gurmukhi(text):
+        return language_id.LanguagePreference("pa-IN", "Guru")
+
+    monkeypatch.setattr(language_id, "identify", gurmukhi)
+
+    voice = await orchestrator._language_preference(conversation, "ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ", voice=True)
+    assert voice == language_id.LanguagePreference("pa-IN", "Latn")
+    assert conversation.conversation_state["language_preference"]["script_code"] == "Latn"
+
+    typed = await orchestrator._language_preference(conversation, "ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ")
+    assert typed == language_id.LanguagePreference("pa-IN", "Guru")
+
+
+async def test_stt_spoken_language_skips_lid(session, monkeypatch):
+    """Saaras heard Punjabi → Roman Punjabi lock, and no LID round trip."""
+    from app.core.config import settings
+    from app.services import transcription
+
+    monkeypatch.setattr(settings, "llm_supports_audio", False)
+    monkeypatch.setattr(transcription, "stt_enabled", lambda: True)
+
+    async def fake_transcribe(audio, mime):
+        return transcription.Transcript("ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ", "pa-IN")
+
+    async def lid_must_not_run(text):
+        raise AssertionError("LID called for a voice note with a spoken language")
+
+    monkeypatch.setattr(transcription, "transcribe", fake_transcribe)
+    monkeypatch.setattr(language_id, "identify", lid_must_not_run)
+
+    conversation = await make_conversation(session)
+    model = scripted(AIMessage("Main theek haan ji."))
+    inbound = InboundMessage(type="audio", media_url=f"data:audio/ogg;base64,{PNG_B64}")
+
+    await orchestrator.run_turn(session, conversation, inbound, model=model)
+
+    system = model.received[0][0].content
+    assert "REPLY LANGUAGE FOR THIS TURN" in system
+    assert "Roman Punjabi using Latin characters only" in system
+
+
+async def test_voice_note_without_lid_still_answers_in_roman(session, monkeypatch):
+    conversation = await make_conversation(session)
+
+    async def unavailable(text):
+        return None
+
+    monkeypatch.setattr(language_id, "identify", unavailable)
+    conversation.conversation_state = {
+        "language_preference": {"language_code": "hi-IN", "script_code": "Deva"}
+    }
+
+    voice = await orchestrator._language_preference(conversation, "...", voice=True)
+    assert voice == language_id.LanguagePreference("hi-IN", "Latn")
+
+    conversation.conversation_state = {}
+    unknown = await orchestrator._language_preference(conversation, "...", voice=True)
+    assert unknown.script_code == "Latn"
+    assert "Latin (Roman) characters only" in unknown.instruction
 
 
 async def test_turn_uses_db_system_prompt_history_and_memories(session, monkeypatch):
@@ -448,12 +513,13 @@ async def test_audio_transcribed_when_stt_enabled(session, monkeypatch):
 
 
 async def test_native_audio_llm_never_transcribes(session, monkeypatch):
-    """caps.audio True (Gemini) → STT is skipped, audio block sent natively."""
+    """caps.audio True with STT disabled → audio block is sent natively."""
     from app.core.config import settings
     from app.services import transcription
 
     monkeypatch.setattr(settings, "llm_supports_audio", True)
-    monkeypatch.setattr(transcription, "stt_enabled", lambda: True)
+    monkeypatch.setattr(settings, "stt_provider", "")
+    monkeypatch.setattr(settings, "stt_api_key", None)
 
     calls: list = []
 
@@ -473,6 +539,34 @@ async def test_native_audio_llm_never_transcribes(session, monkeypatch):
     blocks = model.received[0][-1].content
     assert isinstance(blocks, list)
     assert blocks[0]["type"] == "audio"  # sent natively, media-first order
+
+
+async def test_configured_stt_transcribes_native_audio_llm(session, monkeypatch):
+    """A configured STT provider wins over direct Gemini audio input."""
+    from app.core.config import settings
+    from app.services import transcription
+
+    monkeypatch.setattr(settings, "llm_supports_audio", True)
+    monkeypatch.setattr(settings, "stt_provider", "groq")
+    monkeypatch.setattr(settings, "stt_api_key", "test-key")
+    assert orchestrator.transcription is transcription
+    assert transcription.stt_enabled()
+    assert transcription.should_transcribe_native_audio()
+
+    async def fake_transcribe(audio, mime):
+        return "Please share your notebook prices."
+
+    monkeypatch.setattr(transcription, "transcribe", fake_transcribe)
+
+    conversation = await make_conversation(session)
+    model = scripted(AIMessage("Sure, here are the prices."))
+    inbound = InboundMessage(type="audio", media_url=f"data:audio/ogg;base64,{PNG_B64}")
+
+    await orchestrator.run_turn(session, conversation, inbound, model=model)
+
+    current = model.received[0][-1]
+    assert isinstance(current.content, str)
+    assert "notebook prices" in current.content
 
 
 # ---------------------------------------------------------------------------
@@ -508,3 +602,72 @@ async def test_save_memory_tool_persists_a_memory(session, monkeypatch):
     assert len(memories) == 1
     assert memories[0].content == "Prefiere atención por las tardes"
     assert memories[0].contact_id == conversation.contact_id
+
+
+# ---------------------------------------------------------------------------
+# Per-language model route (LLM_ALT_*)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def punjabi_route(monkeypatch):
+    from app.core import llm
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "llm_alt_languages", "pa-IN")
+    monkeypatch.setattr(settings, "llm_alt_model", "sarvam-105b-conversations")
+    monkeypatch.setattr(settings, "llm_alt_base_url", "https://api.sarvam.ai/v1")
+    primary = scripted(AIMessage("primary reply"))
+    monkeypatch.setattr(orchestrator, "_get_agent", lambda: orchestrator._build_agent(primary))
+
+    def use(alt_model, language):
+        async def identify(text):
+            return language_id.LanguagePreference(language, "Latn")
+
+        monkeypatch.setattr(language_id, "identify", identify)
+        monkeypatch.setattr(llm, "get_alt_chat_model", lambda: alt_model)
+        return primary
+
+    return use
+
+
+async def test_punjabi_turn_routes_to_alternate_model(session, punjabi_route):
+    alt = scripted(AIMessage("Ji, sade kol books ne."))
+    primary = punjabi_route(alt, "pa-IN")
+    conversation = await make_conversation(session)
+
+    replies = await orchestrator.run_turn(
+        session, conversation, InboundMessage(text="tusi kehdiyan books rakhde ho?")
+    )
+
+    assert replies[0].text == "Ji, sade kol books ne."
+    assert alt.received and not primary.received
+
+
+async def test_other_languages_stay_on_primary(session, punjabi_route):
+    alt = scripted(AIMessage("unused"))
+    primary = punjabi_route(alt, "hi-IN")
+    conversation = await make_conversation(session)
+
+    replies = await orchestrator.run_turn(
+        session, conversation, InboundMessage(text="bhai kal aa jaunga kya")
+    )
+
+    assert replies[0].text == "primary reply"
+    assert primary.received and not alt.received
+
+
+async def test_alternate_failure_retries_on_primary(session, punjabi_route):
+    class Broken(ScriptedModel):
+        def _generate(self, *a, **kw):
+            raise RuntimeError("sarvam down")
+
+    primary = punjabi_route(Broken(messages=iter([])), "pa-IN")
+    conversation = await make_conversation(session)
+
+    replies = await orchestrator.run_turn(
+        session, conversation, InboundMessage(text="tusi kehdiyan books rakhde ho?")
+    )
+
+    assert replies[0].text == "primary reply"  # not the apology
+    assert primary.received

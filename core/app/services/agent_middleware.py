@@ -21,8 +21,12 @@ class ToolFilterMiddleware(AgentMiddleware):
     """Only offer the model the tools enabled in agent_config (admin-editable)."""
 
     async def awrap_model_call(self, request: ModelRequest, handler):
-        config = request.runtime.context.config
-        allowed = [t for t in request.tools if tool_enabled(config, t.name)]
+        ctx = request.runtime.context
+        allowed = [
+            t
+            for t in request.tools
+            if tool_enabled(ctx.config, t.name) and t.name not in ctx.suppressed_tools
+        ]
         if len(allowed) != len(request.tools):
             dropped = [t.name for t in request.tools if t not in allowed]
             logger.debug("Tools disabled for this turn: %s", dropped)

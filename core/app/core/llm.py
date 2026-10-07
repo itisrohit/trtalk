@@ -44,12 +44,18 @@ def get_chat_model(
 
     if provider == "google" and settings.google_api_key:
         init_kwargs["api_key"] = settings.google_api_key
+        if settings.llm_thinking_budget is not None:
+            init_kwargs["thinking_budget"] = settings.llm_thinking_budget
     elif provider == "anthropic" and settings.anthropic_api_key:
         init_kwargs["api_key"] = settings.anthropic_api_key
     elif provider == "openai" and settings.openai_api_key:
         init_kwargs["api_key"] = settings.openai_api_key
         if settings.openai_base_url:  # any OpenAI-compatible server
             init_kwargs["base_url"] = settings.openai_base_url
+        if settings.llm_reasoning_effort:
+            # Sent raw: ChatOpenAI's own `reasoning_effort` field assumes
+            # OpenAI o-series semantics, while Groq accepts e.g. "none".
+            init_kwargs["extra_body"] = {"reasoning_effort": settings.llm_reasoning_effort}
     elif provider == "openrouter":
         init_kwargs["api_key"] = settings.openrouter_api_key
         init_kwargs["base_url"] = OPENROUTER_BASE_URL
@@ -58,6 +64,17 @@ def get_chat_model(
 
     init_kwargs.update(kwargs)
     return init_chat_model(model, **init_kwargs)
+
+
+def get_alt_chat_model() -> BaseChatModel:
+    """The per-language alternate chat model (LLM_ALT_*, OpenAI-compatible)."""
+    return get_chat_model(
+        provider="openai",
+        model=settings.llm_alt_model,
+        api_key=settings.llm_alt_api_key or settings.sarvam_api_key,
+        base_url=settings.llm_alt_base_url,
+        extra_body=None,  # LLM_REASONING_EFFORT is for the primary host
+    )
 
 
 def get_media_chat_model(**kwargs) -> BaseChatModel:

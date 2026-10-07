@@ -36,6 +36,10 @@ class ToolModule(Protocol):
     # def register_models(self) -> list[type]: ...          # SQLModel tables + Alembic
     # def register_admin_routes(self, router) -> None: ...  # admin CRUD/config UI backing
     # def config_schema(self) -> type | None: ...           # per-project settings (admin auto-forms)
+    # async def turn_context(self, ctx, query) -> str | None: ...
+    #     Reference text added to the system prompt BEFORE the model runs
+    #     (saves a tool round trip). May add tool names to ctx.suppressed_tools
+    #     when the prompt already holds everything that tool would return.
     # config_key: str = <name>   # key inside agent_config.tool_config (faq uses "faq_search").
     #                            # Keep config_schema() FLAT (str/int/float/bool fields only) —
     #                            # that's what the admin SchemaForm renders.
@@ -52,6 +56,23 @@ def register_module(module: ToolModule) -> None:
 def get_modules() -> list[ToolModule]:
     """All registered modules."""
     return list(_MODULES)
+
+
+async def gather_turn_context(ctx: Any, query: str) -> list[str]:
+    """Run every module's optional `turn_context` hook; failures are skipped."""
+    blocks: list[str] = []
+    for module in _MODULES:
+        hook = getattr(module, "turn_context", None)
+        if hook is None:
+            continue
+        try:
+            block = await hook(ctx, query)
+        except Exception:
+            logger.exception("turn_context hook of module '%s' failed", module.name)
+            continue
+        if block:
+            blocks.append(block)
+    return blocks
 
 
 def get_tools() -> list[Any]:

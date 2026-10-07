@@ -86,11 +86,31 @@ async def test_provider_set_but_no_key_is_disabled(monkeypatch):
     assert not transcription.stt_enabled()
 
 
+async def test_gemini_uses_google_key_and_dedicated_transcriber(monkeypatch):
+    monkeypatch.setattr(settings, "stt_provider", "gemini")
+    monkeypatch.setattr(settings, "stt_api_key", None)
+    monkeypatch.setattr(settings, "google_api_key", "google-test-key")
+    monkeypatch.setattr(settings, "stt_model", "gemini-3.5-transcribe")
+    called = []
+
+    def fake_gemini(audio, mime):
+        called.append((audio, mime))
+        return "  hello from a voice note  "
+
+    monkeypatch.setattr(transcription, "_transcribe_gemini_sync", fake_gemini)
+
+    assert transcription.stt_enabled()
+    assert transcription.should_transcribe_native_audio()
+    assert await transcription.transcribe(OGG, "audio/ogg") == "hello from a voice note"
+    assert called == [(OGG, "audio/ogg")]
+
+
 async def test_transcribe_posts_multipart_and_returns_text(stt_on, monkeypatch):
     recorded = _stub_http(monkeypatch, FakeResponse(200, "  hola quiero información  "))
 
     result = await transcription.transcribe(OGG, "audio/ogg")
 
+    assert transcription.should_transcribe_native_audio()
     assert result == "hola quiero información"  # stripped
     post = next(r for r in recorded if "url" in r)
     assert post["url"] == "https://api.groq.com/openai/v1/audio/transcriptions"
@@ -144,3 +164,33 @@ async def test_oversize_audio_skipped(stt_on, monkeypatch):
 
     assert await transcription.transcribe(OGG, "audio/ogg") is None
     assert recorded == []  # never hit the network
+
+
+async def test_sarvam_returns_spoken_language(monkeypatch):
+    """Saaras detects the language from the audio; it rides on the transcript."""
+    import json
+
+    monkeypatch.setattr(settings, "stt_provider", "sarvam")
+    monkeypatch.setattr(settings, "stt_api_key", "sarvam-key")
+    monkeypatch.setattr(settings, "stt_model", "saaras:v3")
+    monkeypatch.setattr(settings, "stt_base_url", None)
+    monkeypatch.setattr(settings, "stt_language", None)
+    body = {"transcript": " ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ ", "language_code": "pa-IN"}
+    response = FakeResponse(200, json.dumps(body))
+    response.json = lambda: body
+    recorded = _stub_http(monkeypatch, response)
+
+    result = await transcription.transcribe(OGG, "audio/ogg")
+
+    assert result == "ਤੁਸੀਂ ਕਿਵੇਂ ਹੋ"
+    assert result.language_code == "pa-IN"
+    post = next(r for r in recorded if "url" in r)
+    assert post["url"] == "https://api.sarvam.ai/speech-to-text"
+    assert post["data"]["language_code"] == "unknown"  # auto-detect
+    assert post["headers"] == {"api-subscription-key": "sarvam-key"}
+
+
+async def test_whisper_transcript_has_no_language(stt_on, monkeypatch):
+    _stub_http(monkeypatch, FakeResponse(200, "hello"))
+    result = await transcription.transcribe(OGG, "audio/ogg")
+    assert result == "hello" and result.language_code is None
