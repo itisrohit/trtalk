@@ -165,7 +165,7 @@ export interface MemoryItem {
 // --- Leads (handoff module, /admin/modules/handoff/leads) ---
 export interface Lead {
   id: string
-  contact_id: string
+  contact_id: string | null
   contact_display_name: string | null
   name: string
   interest: string | null

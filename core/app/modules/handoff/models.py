@@ -18,13 +18,20 @@ def _utcnow_naive() -> datetime:
 
 
 class Lead(SQLModel, table=True):
-    """One captured lead, tied to the contact who produced it."""
+    """One captured lead. Linked to the contact who produced it until that
+    contact's history is deleted — the lead itself is kept (migration 009)."""
 
     __tablename__ = "leads"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 
-    contact_id: uuid.UUID = Field(foreign_key="contacts.id", nullable=False, index=True)
+    contact_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="contacts.id",
+        nullable=True,
+        index=True,
+        ondelete="SET NULL",
+    )
 
     name: str = Field(max_length=255, nullable=False)
     interest: str | None = Field(default=None, max_length=500)

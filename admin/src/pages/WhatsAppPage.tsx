@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { LogOut, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { useQueryClient } from "@tanstack/react-query"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { apiClient } from "@/lib/api-client"
 
 // The core forwards these to the WhatsApp gateway (admin JWT required), so
@@ -30,6 +34,9 @@ export function WhatsAppPage() {
   const [disconnecting, setDisconnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false)
+  const [deleteHistory, setDeleteHistory] = useState(false)
+  const queryClient = useQueryClient()
 
   const refreshState = useCallback(async () => {
     try {
@@ -84,7 +91,6 @@ export function WhatsAppPage() {
   }
 
   const disconnect = async () => {
-    if (!window.confirm(t("whatsapp.disconnectConfirm"))) return
     setDisconnecting(true)
     setError(null)
     setNotice(null)
@@ -95,9 +101,26 @@ export function WhatsAppPage() {
       setNotice(t("whatsapp.disconnected"))
     } catch {
       setError(t("whatsapp.disconnectError"))
-    } finally {
       setDisconnecting(false)
+      setConfirmDisconnect(false)
+      return
     }
+    // History is deleted only after a successful logout, and only if asked.
+    if (deleteHistory) {
+      try {
+        const { data } = await apiClient.delete<{ deleted_contacts: number }>("/admin/contacts", {
+          params: { channel: "whatsapp" },
+        })
+        setNotice(t("whatsapp.disconnectedAndDeleted", { count: data.deleted_contacts }))
+        await queryClient.invalidateQueries({ queryKey: ["contacts"] })
+        await queryClient.invalidateQueries({ queryKey: ["leads"] })
+      } catch {
+        setError(t("whatsapp.deleteHistoryError"))
+      }
+    }
+    setDisconnecting(false)
+    setConfirmDisconnect(false)
+    setDeleteHistory(false)
   }
 
   useEffect(() => {
@@ -152,7 +175,11 @@ export function WhatsAppPage() {
               </Button>
             )}
             {connected && (
-              <Button variant="destructive" onClick={disconnect} disabled={disconnecting || retryingHistory}>
+              <Button
+                variant="destructive"
+                onClick={() => setConfirmDisconnect(true)}
+                disabled={disconnecting || retryingHistory}
+              >
                 <LogOut />
                 {disconnecting ? t("whatsapp.disconnecting") : t("whatsapp.disconnect")}
               </Button>
@@ -169,6 +196,33 @@ export function WhatsAppPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={confirmDisconnect}
+        onOpenChange={(open) => {
+          setConfirmDisconnect(open)
+          if (!open) setDeleteHistory(false)
+        }}
+        title={t("whatsapp.disconnectTitle")}
+        description={t("whatsapp.disconnectConfirm")}
+        confirmLabel={t("whatsapp.disconnect")}
+        onConfirm={() => void disconnect()}
+        isLoading={disconnecting}
+        variant="destructive"
+      >
+        <div className="flex items-start gap-3 rounded-md border p-3">
+          <Switch
+            id="delete-history"
+            checked={deleteHistory}
+            onCheckedChange={setDeleteHistory}
+            disabled={disconnecting}
+          />
+          <div className="space-y-1">
+            <Label htmlFor="delete-history">{t("whatsapp.deleteHistory")}</Label>
+            <p className="text-sm text-muted-foreground">{t("whatsapp.deleteHistoryHint")}</p>
+          </div>
+        </div>
+      </ConfirmDialog>
     </div>
   )
 }

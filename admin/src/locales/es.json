@@ -25,8 +25,8 @@
     "faq": "FAQ / RAG",
     "tools": "Herramientas",
     "conversations": "Conversaciones",
-    "leads": "Leads"
-    ,"whatsapp": "WhatsApp"
+    "leads": "Leads",
+    "whatsapp": "WhatsApp"
   },
   "header": {
     "logout": "Cerrar sesión",
@@ -84,7 +84,18 @@
     "error": "No se pudo acceder al servicio local de WhatsApp.",
     "alreadyConnected": "WhatsApp ya está conectado; no se necesita un nuevo código QR.",
     "qrWaiting": "Esperando a que Evolution API proporcione un código QR…",
-    "states": { "open": "Conectado", "close": "Desconectado", "connecting": "Conectando", "unknown": "Desconocido", "unavailable": "No disponible" }
+    "states": {
+      "open": "Conectado",
+      "close": "Desconectado",
+      "connecting": "Conectando",
+      "unknown": "Desconocido",
+      "unavailable": "No disponible"
+    },
+    "disconnectTitle": "¿Desconectar WhatsApp?",
+    "deleteHistory": "Eliminar también todo el historial de conversaciones de WhatsApp",
+    "deleteHistoryHint": "Elimina de TrTalk todos los contactos, mensajes, notas de voz, imágenes y memorias de WhatsApp. Los leads capturados se conservan. No se puede deshacer.",
+    "disconnectedAndDeleted": "WhatsApp desconectado y {{count}} conversación(es) eliminada(s).",
+    "deleteHistoryError": "WhatsApp se desconectó, pero no se pudo eliminar el historial de conversaciones. Inténtalo de nuevo."
   },
   "prompt": {
     "title": "System prompt",
@@ -162,7 +173,10 @@
     "filterAll": "Todas",
     "filterHuman": "Atención humana",
     "filterChannelAll": "Todos los canales",
-    "channel": { "whatsapp": "WhatsApp", "telegram": "Telegram" },
+    "channel": {
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram"
+    },
     "emptyHuman": "No hay conversaciones esperando a un humano. 🎉",
     "needsHuman": "Atención humana",
     "handoffReason": "Derivada: {{reason}}",
@@ -209,6 +223,7 @@
     "interest": "Interés",
     "extra": "Extra",
     "date": "Fecha",
-    "viewConversation": "Ver conversación"
+    "viewConversation": "Ver conversación",
+    "conversationDeleted": "Conversación eliminada"
   }
 }

@@ -25,8 +25,8 @@
     "faq": "FAQ / RAG",
     "tools": "Tools",
     "conversations": "Conversations",
-    "leads": "Leads"
-    ,"whatsapp": "WhatsApp"
+    "leads": "Leads",
+    "whatsapp": "WhatsApp"
   },
   "header": {
     "logout": "Log out",
@@ -84,7 +84,18 @@
     "error": "Could not reach the local WhatsApp service.",
     "alreadyConnected": "WhatsApp is already connected; no new QR code is needed.",
     "qrWaiting": "Waiting for Evolution API to provide a QR code…",
-    "states": { "open": "Connected", "close": "Disconnected", "connecting": "Connecting", "unknown": "Unknown", "unavailable": "Unavailable" }
+    "states": {
+      "open": "Connected",
+      "close": "Disconnected",
+      "connecting": "Connecting",
+      "unknown": "Unknown",
+      "unavailable": "Unavailable"
+    },
+    "disconnectTitle": "Disconnect WhatsApp?",
+    "deleteHistory": "Also delete all WhatsApp conversation history",
+    "deleteHistoryHint": "Removes every WhatsApp contact, message, voice note, image and saved memory from TrTalk. Captured leads are kept. This cannot be undone.",
+    "disconnectedAndDeleted": "WhatsApp disconnected and {{count}} conversation(s) deleted.",
+    "deleteHistoryError": "WhatsApp was disconnected, but the conversation history could not be deleted. Please try again."
   },
   "prompt": {
     "title": "System prompt",
@@ -162,7 +173,10 @@
     "filterAll": "All",
     "filterHuman": "Needs human",
     "filterChannelAll": "All channels",
-    "channel": { "whatsapp": "WhatsApp", "telegram": "Telegram" },
+    "channel": {
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram"
+    },
     "emptyHuman": "No conversations waiting for a human. 🎉",
     "needsHuman": "Needs human",
     "handoffReason": "Handoff: {{reason}}",
@@ -209,6 +223,7 @@
     "interest": "Interest",
     "extra": "Extra",
     "date": "Date",
-    "viewConversation": "View conversation"
+    "viewConversation": "View conversation",
+    "conversationDeleted": "Conversation deleted"
   }
 }

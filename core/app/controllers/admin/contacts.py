@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import case, func
+from sqlalchemy import case, delete as sqldelete, func, update as sqlupdate
 from sqlmodel import col, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -20,6 +20,7 @@ from app.core import storage
 from app.core.dependencies import CurrentAdmin
 from app.db.session import get_session
 from app.models import Contact, Conversation, Memory, Message
+from app.modules.handoff.models import Lead
 from app.schemas.admin_contacts import (
     ContactDetail,
     ContactListItem,
@@ -115,6 +116,58 @@ def _search_filter(search: str):
         col(Contact.external_id).ilike(pattern),
         col(Contact.wa_id).ilike(pattern),
     )
+
+
+@router.delete("")
+async def delete_channel_history(
+    channel: str = Query(..., min_length=1, description="Only this channel's contacts"),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Delete every contact of one channel with all their history.
+
+    Removes contacts, conversations, messages, memories and stored media.
+    Leads are kept (their contact link becomes NULL — migration 009): they are
+    the business's sales list and carry their own name/phone copy. `channel`
+    is required so one call can never wipe every channel at once.
+    """
+    contact_ids = list(
+        (await session.exec(select(Contact.id).where(Contact.channel == channel))).all()
+    )
+    if not contact_ids:
+        return {"deleted_contacts": 0, "deleted_messages": 0}
+
+    conversation_ids = select(Conversation.id).where(
+        col(Conversation.contact_id).in_(contact_ids)
+    )
+    deleted_messages = (
+        await session.exec(
+            sqldelete(Message).where(col(Message.conversation_id).in_(conversation_ids))
+        )
+    ).rowcount
+    await session.exec(
+        sqldelete(Conversation).where(col(Conversation.contact_id).in_(contact_ids))
+    )
+    await session.exec(sqldelete(Memory).where(col(Memory.contact_id).in_(contact_ids)))
+    # Unlink leads explicitly (the FK also says SET NULL) so the delete never
+    # depends on how an older database's constraint was created.
+    await session.exec(
+        sqlupdate(Lead).where(col(Lead.contact_id).in_(contact_ids)).values(contact_id=None)
+    )
+    await session.exec(sqldelete(Contact).where(col(Contact.id).in_(contact_ids)))
+    await session.flush()
+
+    # Media last and best-effort: a storage hiccup must not undo the delete.
+    if storage.is_configured():
+        for contact_id in contact_ids:
+            try:
+                await storage.delete_contact_media(contact_id)
+            except Exception:
+                logger.warning("Could not delete stored media of contact %s", contact_id)
+
+    logger.info(
+        "Deleted %d %s contact(s) and %d message(s)", len(contact_ids), channel, deleted_messages
+    )
+    return {"deleted_contacts": len(contact_ids), "deleted_messages": deleted_messages}
 
 
 @router.get("", response_model=ContactListResponse)

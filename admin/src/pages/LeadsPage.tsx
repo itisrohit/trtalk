@@ -67,12 +67,16 @@ export function LeadsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Link
-                        to={`/conversations/${lead.contact_id}`}
-                        className="text-primary hover:underline"
-                      >
-                        {lead.contact_display_name ?? t("leads.viewConversation")}
-                      </Link>
+                      {lead.contact_id ? (
+                        <Link
+                          to={`/conversations/${lead.contact_id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {lead.contact_display_name ?? t("leads.viewConversation")}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">{t("leads.conversationDeleted")}</span>
+                      )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">
                       {lead.email ?? "—"}

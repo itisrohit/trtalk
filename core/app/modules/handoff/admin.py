@@ -20,7 +20,7 @@ from app.modules.handoff.models import Lead
 
 class LeadItem(BaseModel):
     id: uuid.UUID
-    contact_id: uuid.UUID
+    contact_id: uuid.UUID | None  # None once the contact's history was deleted
     contact_display_name: str | None
     name: str
     interest: str | None
@@ -46,7 +46,8 @@ def register(router: APIRouter) -> None:
         offset: int = Query(default=0, ge=0),
         contact_id: uuid.UUID | None = Query(default=None),
     ):
-        base = select(Lead, Contact.display_name).join(
+        # Outer join: leads whose contact was deleted must still be listed.
+        base = select(Lead, Contact.display_name).outerjoin(
             Contact, col(Lead.contact_id) == col(Contact.id)
         )
         count = select(func.count()).select_from(Lead)

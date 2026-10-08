@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import {
   AlertDialog,
@@ -20,6 +21,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void
   isLoading?: boolean
   variant?: "default" | "destructive"
+  /** Extra content between the description and the buttons (e.g. an option). */
+  children?: ReactNode
 }
 
 export function ConfirmDialog({
@@ -32,6 +35,7 @@ export function ConfirmDialog({
   onConfirm,
   isLoading,
   variant = "default",
+  children,
 }: ConfirmDialogProps) {
   const { t } = useTranslation()
 
@@ -42,6 +46,7 @@ export function ConfirmDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>
             {cancelLabel ?? t("common.cancel")}

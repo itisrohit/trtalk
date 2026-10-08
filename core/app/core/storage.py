@@ -142,6 +142,29 @@ async def put_media(key: str, data: bytes, content_type: str) -> None:
     )
 
 
+async def delete_contact_media(contact_id: uuid.UUID) -> int:
+    """Delete every stored object of one contact (`media/<contact_id>/…`).
+
+    Returns how many were removed. Raises on failure — callers decide.
+    """
+    client = _get_client()
+    prefix = f"{MEDIA_KEY_PREFIX}{contact_id}/"
+    deleted = 0
+    while True:
+        listing = await asyncio.to_thread(
+            client.list_objects_v2, Bucket=settings.storage_bucket, Prefix=prefix
+        )
+        keys = [{"Key": obj["Key"]} for obj in listing.get("Contents", [])]
+        if not keys:
+            return deleted
+        await asyncio.to_thread(
+            client.delete_objects,
+            Bucket=settings.storage_bucket,
+            Delete={"Objects": keys, "Quiet": True},
+        )
+        deleted += len(keys)
+
+
 async def get_media(key: str) -> tuple[str, bytes]:
     """Download one object → (content_type, bytes). Raises on failure.
 
