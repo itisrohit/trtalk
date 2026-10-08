@@ -47,7 +47,7 @@ def test_connect_returns_qr(client):
 
 @respx.mock
 def test_logout_and_restart(client):
-    respx.post(f"{EVO}/instance/logout/shop").mock(return_value=httpx.Response(200, json={}))
+    respx.delete(f"{EVO}/instance/logout/shop").mock(return_value=httpx.Response(200, json={}))
     respx.post(f"{EVO}/instance/restart/shop").mock(return_value=httpx.Response(200, json={}))
     assert client.post("/admin/connection/logout", headers=KEY).json()["state"] == "close"
     assert client.post("/admin/connection/restart", headers=KEY).json()["state"] == "connecting"

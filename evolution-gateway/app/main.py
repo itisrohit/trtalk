@@ -321,7 +321,8 @@ async def connection_restart(x_internal_api_key: str | None = Header(default=Non
 @app.post("/admin/connection/logout")
 async def connection_logout(x_internal_api_key: str | None = Header(default=None)):
     _require_internal_key(x_internal_api_key)
-    await _evolution_instance("POST", "logout")
+    # Evolution v2 only routes DELETE here ("Cannot POST /instance/logout").
+    await _evolution_instance("DELETE", "logout")
     return {"state": "close", "qr": None}
 
 
